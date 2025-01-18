@@ -1,73 +1,159 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
+const archiver = require("archiver");
+const unzipper = require("unzipper");
+const { exec } = require("child_process");
 
 let mainWindow;
 
 app.on("ready", () => {
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1200,
+        height: 800,
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
         },
     });
 
-    mainWindow.loadURL("http://localhost:3000"); // Adjust for your React app's URL
+    mainWindow.loadURL("http://localhost:3000");
 });
 
-ipcMain.handle("list-files", async (event, folderPath) => {
-    try {
-        return fs.readdirSync(folderPath);
-    } catch (error) {
-        throw new Error(`Failed to list files: ${error.message}`);
-    }
-});
+// Utility function for responses
+function createResponse(success, data = {}, message = "") {
+    return { success, data, message };
+}
 
-ipcMain.handle("rename-file", async (event, folderPath, oldName, newName) => {
+// --- File Operations ---
+ipcMain.handle("create-file", async (event, filePath) => {
     try {
-        const oldPath = path.join(folderPath, oldName);
-        const newPath = path.join(folderPath, newName);
-        fs.renameSync(oldPath, newPath);
-    } catch (error) {
-        throw new Error(`Failed to rename file: ${error.message}`);
-    }
-});
-
-ipcMain.handle("add-file", async (event, folderPath, fileName) => {
-    try {
-        const filePath = path.join(folderPath, fileName);
         fs.writeFileSync(filePath, "");
+        return createResponse(true, { filePath }, "File created successfully!");
     } catch (error) {
-        throw new Error(`Failed to create file: ${error.message}`);
+        return createResponse(false, {}, `Failed to create file: ${error.message}`);
     }
 });
 
-ipcMain.handle("add-folder", async (event, folderPath) => {
+ipcMain.handle("read-file", async (event, filePath) => {
     try {
-        fs.mkdirSync(folderPath);
+        const content = fs.readFileSync(filePath, "utf8");
+        return createResponse(true, { content }, "File read successfully!");
     } catch (error) {
-        throw new Error(`Failed to create folder: ${error.message}`);
+        return createResponse(false, {}, `Failed to read file: ${error.message}`);
     }
 });
 
-ipcMain.handle("move-file", async (event, folderPath, fileName, targetPath) => {
+ipcMain.handle("append-to-file", async (event, filePath, content) => {
     try {
-        const sourcePath = path.join(folderPath, fileName);
-        const destinationPath = path.join(targetPath, fileName);
-        fs.renameSync(sourcePath, destinationPath);
+        fs.appendFileSync(filePath, content);
+        return createResponse(true, { filePath }, "Content appended successfully!");
     } catch (error) {
-        throw new Error(`Failed to move file: ${error.message}`);
+        return createResponse(false, {}, `Failed to append to file: ${error.message}`);
     }
 });
 
-ipcMain.handle("copy-file", async (event, folderPath, fileName, targetPath) => {
+ipcMain.handle("delete-file", async (event, filePath) => {
     try {
-        const sourcePath = path.join(folderPath, fileName);
-        const destinationPath = path.join(targetPath, fileName);
-        fs.copyFileSync(sourcePath, destinationPath);
+        fs.unlinkSync(filePath);
+        return createResponse(true, { filePath }, "File deleted successfully!");
     } catch (error) {
-        throw new Error(`Failed to copy file: ${error.message}`);
+        return createResponse(false, {}, `Failed to delete file: ${error.message}`);
+    }
+});
+
+// --- Directory Operations ---
+ipcMain.handle("create-directory", async (event, folderPath) => {
+    try {
+        fs.mkdirSync(folderPath, { recursive: true });
+        return createResponse(true, { folderPath }, "Directory created successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to create directory: ${error.message}`);
+    }
+});
+
+ipcMain.handle("list-directory", async (event, folderPath) => {
+    try {
+        const items = fs.readdirSync(folderPath).map((item) => {
+            const fullPath = path.join(folderPath, item);
+            const stats = fs.statSync(fullPath);
+            return {
+                name: item,
+                path: fullPath,
+                isDirectory: stats.isDirectory(),
+                size: stats.size,
+                modified: stats.mtime,
+            };
+        });
+        return createResponse(true, { items }, "Directory listed successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to list directory: ${error.message}`);
+    }
+});
+
+ipcMain.handle("delete-directory", async (event, folderPath) => {
+    try {
+        fs.rmdirSync(folderPath, { recursive: true });
+        return createResponse(true, { folderPath }, "Directory deleted successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to delete directory: ${error.message}`);
+    }
+});
+
+// --- Advanced Operations ---
+ipcMain.handle("compress-files", async (event, files, zipPath) => {
+    try {
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        const output = fs.createWriteStream(zipPath);
+
+        files.forEach((file) => archive.file(file, { name: path.basename(file) }));
+        archive.pipe(output);
+        await archive.finalize();
+
+        return createResponse(true, { zipPath }, "Files compressed successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to compress files: ${error.message}`);
+    }
+});
+
+ipcMain.handle("execute-command", async (event, command) => {
+    try {
+        exec(command, (error, stdout, stderr) => {
+            if (error) throw new Error(stderr);
+            return createResponse(true, { output: stdout }, "Command executed successfully!");
+        });
+    } catch (error) {
+        return createResponse(false, {}, `Failed to execute command: ${error.message}`);
+    }
+});
+
+// --- Utilities ---
+ipcMain.handle("open-file", async (event, filePath) => {
+    try {
+        shell.openPath(filePath);
+        return createResponse(true, { filePath }, "File opened successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to open file: ${error.message}`);
+    }
+});
+
+ipcMain.handle("search-files", async (event, folderPath, searchTerm) => {
+    try {
+        const matches = [];
+        const search = (dir) => {
+            fs.readdirSync(dir).forEach((item) => {
+                const fullPath = path.join(dir, item);
+                if (fs.statSync(fullPath).isDirectory()) {
+                    search(fullPath);
+                } else if (item.includes(searchTerm)) {
+                    matches.push(fullPath);
+                }
+            });
+        };
+        search(folderPath);
+        return createResponse(true, { matches }, "Search completed successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to search files: ${error.message}`);
     }
 });
