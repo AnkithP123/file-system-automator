@@ -27,14 +27,16 @@ function App() {
         }
     };
 
-    const addBox = (newBoxY) => {
-        setBoxes((prevBoxes) => [...prevBoxes, { y: newBoxY }]);
-        console.log(boxes);
+    const addBox = () => {
+        setBoxes((prevBoxes) => {
+            const lastBox = prevBoxes[prevBoxes.length - 1];
+            const newBoxY = lastBox.y + 250; 
+            return [...prevBoxes, { y: newBoxY }];
+        });
     };
-    
 
     return (
-        <div style={{ overflow: "hidden" }}>
+        <div style={{ overflow: "hidden", backgroundColor: "#2c2c2c", width: "100vw", height: "100vh" }}>
             <button 
                 onClick={resetPosition} 
                 style={{
@@ -57,12 +59,12 @@ function App() {
                 onMouseMove={handleMouseMove}
                 style={{
                     cursor: isDragging ? "grabbing" : "grab",
-                    width: "100vw",
-                    height: "100vh"
+                    width: "100%",
+                    height: "100%"
                 }}
             >
                 {boxes.map((box, index) => (
-                    <Box key={index} canvasOffset={{ x: canvasOffset.x, y: canvasOffset.y}} addBox={addBox} />
+                    <Box key={index} canvasOffset={{ x: canvasOffset.x, y: canvasOffset.y + box.y }} addBox={addBox} />
                 ))}
             </div>
         </div>
