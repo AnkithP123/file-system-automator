@@ -1,73 +1,114 @@
 import React, { useState } from 'react';
-import { AiOutlineCheckCircle, AiOutlineCloseCircle } from 'react-icons/ai';
 import AIExecutor from './AIExecutor';
+import './AI.css';
 
-const AI = () => {
-    const [progress, setProgress] = useState([]);
-    const [loading, setLoading] = useState(false);
+function AI() {
+  const [prompt, setPrompt] = useState("");
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [error, setError] = useState(null);
+  const [progress, setProgress] = useState([]);
 
-    const executeTask = async () => {
-        setLoading(true);
-        const aiExecutor = new AIExecutor();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!prompt.trim()) return;
 
-        try {
-            // Step 1: Ask Gemini the feasibility of the prompt
-            const feasibilityResponse = await aiExecutor.sendMessage('Check feasibility of the prompt');
-            if (feasibilityResponse.status !== 'Success') {
-                setProgress(prev => [...prev, { status: 'Fail', description: 'Feasibility check failed' }]);
-                setLoading(false);
-                return;
-            }
-            setProgress(prev => [...prev, { status: 'Success', description: 'Feasibility check passed' }]);
+    setIsExecuting(true);
+    setError(null);
+    setProgress([]);
 
-            // Step 2: Tell Gemini to begin its task and run the very first command
-            const firstCommandResponse = await aiExecutor.sendMessage('Begin task and run the first command');
-            if (firstCommandResponse.status !== 'Success') {
-                setProgress(prev => [...prev, { status: 'Fail', description: 'First command execution failed' }]);
-                setLoading(false);
-                return;
-            }
-            setProgress(prev => [...prev, { status: 'Success', description: 'First command executed successfully' }]);
+    try {
+      const executor = new AIExecutor('AIzaSyBSXRGDcMEfwZEGhO3QPUnAxFvWAVG9Ch0');
+      
+      // Check feasibility
+      const feasibility = await executor.checkFeasibility(prompt);
+      if (!feasibility.feasible) {
+        throw new Error(`Task is not feasible: ${feasibility.message}`);
+      }
+      setProgress(prev => [...prev, { success: true, summary: "Feasibility check passed" }]);
 
-            // Step 3: Get a summary of what was accomplished
-            const summaryResponse = await aiExecutor.sendMessage('Get summary of the first command');
-            if (summaryResponse.status !== 'Success') {
-                setProgress(prev => [...prev, { status: 'Fail', description: 'Failed to get summary of the first command' }]);
-                setLoading(false);
-                return;
-            }
-            setProgress(prev => [...prev, { status: 'Success', description: 'Summary of the first command retrieved' }]);
+      // Begin task
+      const command = await executor.beginTask(prompt);
+      setProgress(prev => [...prev, { success: true, summary: `Initial command: ${command}` }]);
 
-            // Append the summary to the working list of progress
-            setProgress(prev => [...prev, { status: 'Success', description: summaryResponse.summary }]);
+      // Execute task
+      const result = await executor.executeTask(prompt);
+      setProgress(prev => [
+        ...prev,
+        ...result.taskSummary,
+        { success: true, summary: result.finalSummary }
+      ]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setProgress(prev => [...prev, { success: false, summary: "Task execution failed" }]);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
 
-        } catch (error) {
-            setProgress(prev => [...prev, { status: 'Fail', description: 'An error occurred during execution' }]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div>
-            <h1>AI Task Executor</h1>
-            <button onClick={executeTask} disabled={loading}>
-                {loading ? 'Executing...' : 'Start Task'}
-            </button>
-            <ul>
-                {progress.map((step, index) => (
-                    <li key={index}>
-                        {step.status === 'Success' ? (
-                            <AiOutlineCheckCircle color="green" />
-                        ) : (
-                            <AiOutlineCloseCircle color="red" />
-                        )}
-                        {step.description}
-                    </li>
-                ))}
-            </ul>
+  return (
+    <div className="ai-container">
+      <div className="ai-card">
+        <div className="ai-card-header">
+          <h2>AI Task Executor</h2>
+          <p>Enter your task prompt and the AI will execute it step by step</p>
         </div>
-    );
-};
+        <form onSubmit={handleSubmit}>
+          <div className="ai-card-content">
+            <div className="textarea-container">
+              <textarea
+                placeholder="Enter your task prompt..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                disabled={isExecuting}
+              />
+            </div>
+
+            {error && (
+              <div className="alert alert-error">
+                <h4>Error</h4>
+                <p>{error}</p>
+              </div>
+            )}
+
+            {progress.length > 0 && (
+              <div className="progress-container">
+                <div className="progress-list">
+                  {progress.map((step, index) => (
+                    <div key={index} className={`progress-item ${step.success ? 'success' : 'error'}`}>
+                      <span className="badge">
+                        {step.success ? "Success" : "Failed"}
+                      </span>
+                      <span className="summary">{step.summary}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="ai-card-footer">
+            <button 
+              type="submit" 
+              className="submit-button"
+              disabled={!prompt.trim() || isExecuting}
+            >
+              {isExecuting ? (
+                <>
+                  <span className="loading-spinner"></span>
+                  Executing...
+                </>
+              ) : (
+                <>
+                  <span className="send-icon">➤</span>
+                  Execute Task
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default AI;
+

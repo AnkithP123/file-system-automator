@@ -1,13 +1,9 @@
-const {
-    GoogleGenerativeAI,
-    HarmCategory,
-    HarmBlockThreshold,
-} = require("@google/generative-ai");
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
 class AIExecutor {
     constructor(apiKey) {
         if (!apiKey) {
-            throw new Error("GEMINI_API_KEY is required");
+            throw new Error("REACT_APP_GEMINI_API_KEY is required");
         }
         this.apiKey = apiKey;
         this.genAI = new GoogleGenerativeAI(apiKey);
@@ -58,6 +54,7 @@ class AIExecutor {
         throw new Error("Invalid feasibility response from Gemini.");
     }
 
+
     async beginTask(prompt) {
         const message = `Begin this task based on the prompt: "${prompt}". Provide the first command to execute.`;
         const response = await this.sendMessage(message);
@@ -67,13 +64,15 @@ class AIExecutor {
     async getStepSummary(commandOutput) {
         const message = `Provide a summary of what was accomplished by this output: "${commandOutput}". Respond with ONLY the following format and nothing else: First, the word 'Success' or 'Failure', then a semicolon, and finally a brief summary of the outcome in a couple words.`;
         const response = await this.sendMessage(message);
-        const summaryMatch = response.match(/(Success|Failure):(.+)/);
+        const summaryMatch = response.match(/(Success|Failure);(.+)/);
+        console.log('Match: ', summaryMatch);
         if (summaryMatch) {
             return {
                 success: summaryMatch[1] === "Success",
                 summary: summaryMatch[2].trim(),
             };
         }
+        console.log('INVALID:', response);
         throw new Error("Invalid summary response from Gemini.");
     }
 
@@ -101,7 +100,7 @@ class AIExecutor {
 
         while (!taskCompleted) {
             // Execute the command (this part is abstracted, assuming a function executeCommand exists)
-            const commandOutput = await executeCommand(command);
+            const commandOutput = await this.executeCommand(command);
 
             const stepSummary = await this.getStepSummary(commandOutput);
             taskSummary.push(stepSummary);
@@ -122,6 +121,14 @@ class AIExecutor {
             finalSummary,
         };
     }
+
+    // Mock implementation of executeCommand
+    async executeCommand(command) {
+        // This is a mock implementation. In a real application,
+        // this would actually execute the command
+        return `Executed command: ${command}`;
+    }
 }
 
-module.exports = AIExecutor;
+export default AIExecutor;
+
