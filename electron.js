@@ -1,6 +1,9 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
+const archiver = require("archiver");
+const unzipper = require("unzipper");
 
 let mainWindow;
 
@@ -14,60 +17,140 @@ app.on("ready", () => {
         },
     });
 
-    mainWindow.loadURL("http://localhost:3000"); // Adjust for your React app's URL
+    mainWindow.loadURL("http://localhost:3000");
 });
 
-ipcMain.handle("list-files", async (event, folderPath) => {
+// --- File Management ---
+ipcMain.handle("delete-file", async (event, filePath) => {
     try {
-        return fs.readdirSync(folderPath);
+        fs.unlinkSync(filePath);
+        return "File deleted successfully!";
     } catch (error) {
-        throw new Error(`Failed to list files: ${error.message}`);
+        throw new Error(`Failed to delete file: ${error.message}`);
     }
 });
 
-ipcMain.handle("rename-file", async (event, folderPath, oldName, newName) => {
+ipcMain.handle("delete-folder", async (event, folderPath) => {
     try {
-        const oldPath = path.join(folderPath, oldName);
-        const newPath = path.join(folderPath, newName);
-        fs.renameSync(oldPath, newPath);
+        fs.rmdirSync(folderPath, { recursive: true });
+        return "Folder deleted successfully!";
     } catch (error) {
-        throw new Error(`Failed to rename file: ${error.message}`);
+        throw new Error(`Failed to delete folder: ${error.message}`);
     }
 });
 
-ipcMain.handle("add-file", async (event, folderPath, fileName) => {
+ipcMain.handle("check-file-exists", async (event, filePath) => {
+    return fs.existsSync(filePath);
+});
+
+ipcMain.handle("get-file-details", async (event, filePath) => {
     try {
-        const filePath = path.join(folderPath, fileName);
-        fs.writeFileSync(filePath, "");
+        const stats = fs.statSync(filePath);
+        return {
+            size: stats.size,
+            created: stats.birthtime,
+            modified: stats.mtime,
+        };
     } catch (error) {
-        throw new Error(`Failed to create file: ${error.message}`);
+        throw new Error(`Failed to get file details: ${error.message}`);
     }
 });
 
-ipcMain.handle("add-folder", async (event, folderPath) => {
+ipcMain.handle("read-file", async (event, filePath) => {
     try {
-        fs.mkdirSync(folderPath);
+        return fs.readFileSync(filePath, "utf8");
     } catch (error) {
-        throw new Error(`Failed to create folder: ${error.message}`);
+        throw new Error(`Failed to read file: ${error.message}`);
     }
 });
 
-ipcMain.handle("move-file", async (event, folderPath, fileName, targetPath) => {
+ipcMain.handle("write-file", async (event, filePath, content) => {
     try {
-        const sourcePath = path.join(folderPath, fileName);
-        const destinationPath = path.join(targetPath, fileName);
-        fs.renameSync(sourcePath, destinationPath);
+        fs.writeFileSync(filePath, content);
+        return "File written successfully!";
     } catch (error) {
-        throw new Error(`Failed to move file: ${error.message}`);
+        throw new Error(`Failed to write to file: ${error.message}`);
     }
 });
 
-ipcMain.handle("copy-file", async (event, folderPath, fileName, targetPath) => {
+// --- Folder Operations ---
+ipcMain.handle("list-subfolders", async (event, folderPath) => {
     try {
-        const sourcePath = path.join(folderPath, fileName);
-        const destinationPath = path.join(targetPath, fileName);
-        fs.copyFileSync(sourcePath, destinationPath);
+        return fs.readdirSync(folderPath).filter((item) =>
+            fs.statSync(path.join(folderPath, item)).isDirectory()
+        );
     } catch (error) {
-        throw new Error(`Failed to copy file: ${error.message}`);
+        throw new Error(`Failed to list subfolders: ${error.message}`);
+    }
+});
+
+ipcMain.handle("recursive-folder-listing", async (event, folderPath) => {
+    const getFolderContents = (dir) => {
+        return fs.readdirSync(dir).map((item) => {
+            const itemPath = path.join(dir, item);
+            return fs.statSync(itemPath).isDirectory()
+                ? { folder: item, contents: getFolderContents(itemPath) }
+                : { file: item };
+        });
+    };
+
+    try {
+        return getFolderContents(folderPath);
+    } catch (error) {
+        throw new Error(`Failed to list folder contents: ${error.message}`);
+    }
+});
+
+ipcMain.handle("count-files-in-folder", async (event, folderPath) => {
+    try {
+        return fs.readdirSync(folderPath).filter((item) =>
+            fs.statSync(path.join(folderPath, item)).isFile()
+        ).length;
+    } catch (error) {
+        throw new Error(`Failed to count files: ${error.message}`);
+    }
+});
+
+// --- Advanced Operations ---
+ipcMain.handle("zip-folder", async (event, folderPath, zipPath) => {
+    try {
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        const output = fs.createWriteStream(zipPath);
+
+        archive.directory(folderPath, false).pipe(output);
+        await archive.finalize();
+
+        return "Folder zipped successfully!";
+    } catch (error) {
+        throw new Error(`Failed to zip folder: ${error.message}`);
+    }
+});
+
+ipcMain.handle("unzip-file", async (event, zipPath, targetPath) => {
+    try {
+        fs.createReadStream(zipPath).pipe(unzipper.Extract({ path: targetPath }));
+        return "File unzipped successfully!";
+    } catch (error) {
+        throw new Error(`Failed to unzip file: ${error.message}`);
+    }
+});
+
+ipcMain.handle("file-hash", async (event, filePath) => {
+    try {
+        const fileBuffer = fs.readFileSync(filePath);
+        const hash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
+        return hash;
+    } catch (error) {
+        throw new Error(`Failed to generate file hash: ${error.message}`);
+    }
+});
+
+// --- Utility ---
+ipcMain.handle("open-file", async (event, filePath) => {
+    try {
+        shell.openPath(filePath);
+        return "File opened!";
+    } catch (error) {
+        throw new Error(`Failed to open file: ${error.message}`);
     }
 });
