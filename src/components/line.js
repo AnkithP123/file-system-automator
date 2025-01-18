@@ -29,9 +29,8 @@ function Line({ x1, y1, x2, y2, isCurved }) {
             <path
                 d={linePath}
                 stroke="#000"
-                strokeWidth="2"
+                strokeWidth="4"
                 fill="none"
-                markerEnd={`url(#${arrowId})`}
             />
         </svg>
     );
