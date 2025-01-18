@@ -27,10 +27,10 @@ function Modal({ args, onArgChange, onClose }) {
                 <div style={{ margin: '20px 0' }}>
                     {args.map((arg) => (
                         <div key={arg.id} style={{ marginBottom: '10px' }}>
-                            <label>{`Option ${arg.id}:`}</label>
+                            <label>{`Argument ${arg.id}  (${arg.value}):`}</label>
                             <textarea
-                                name={`option${arg.id}`}
-                                value={arg.value}
+                                name={`Arg #${arg.id}:`}
+                                value={''}
                                 onChange={(e) => onArgChange(arg.id, e.target.value)}
                                 style={{
                                     width: '100%',
@@ -38,7 +38,7 @@ function Modal({ args, onArgChange, onClose }) {
                                     borderRadius: '5px',
                                     border: '1px solid #ccc',
                                     boxSizing: 'border-box',
-                                    marginBottom: '10px'
+                                    marginBottom: '20px'
                                 }}
                             />
                         </div>
@@ -48,7 +48,7 @@ function Modal({ args, onArgChange, onClose }) {
                     onClick={onClose}
                     style={{
                         position: 'absolute',
-                        bottom: '20px',
+                        bottom: '10px',
                         right: '20px',
                         padding: '10px',
                         backgroundColor: '#ff0000',

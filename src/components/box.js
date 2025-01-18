@@ -8,10 +8,27 @@ function Box({ canvasOffset, addBox }) {
 
     const [steps, setSteps] = useState([
         { value: '', label: 'Select Step' },
-        { value: 'Option1', label: 'Option 1' },
-        { value: 'Option2', label: 'Option 2' },
-        { value: 'Option3', label: 'Option 3' }
+        { value: 'listFiles', label: 'listFiles' },
+        { value: 'renameFile', label: 'renameFile' },
+        { value: 'addFile', label: 'addFile' },
+        { value: 'addFolder', label: 'addFolder' },
+        { value: 'moveFile', label: 'moveFile' },
+        { value: 'copyFile', label: 'copyFile' },
+        { value: 'deleteFile', label: 'deleteFile' },
+        { value: 'deleteFolder', label: 'deleteFolder' },
+        { value: 'checkFileExists', label: 'checkFileExists' },
+        { value: 'getFileDetails', label: 'getFileDetails' },
+        { value: 'readFile', label: 'readFile' },
+        { value: 'writeFile', label: 'writeFile' },
+        { value: 'listSubfolders', label: 'listSubfolders' },
+        { value: 'recursiveFolderListing', label: 'recursiveFolderListing' },
+        { value: 'countFilesInFolder', label: 'countFilesInFolder' },
+        { value: 'zipFolder', label: 'zipFolder' },
+        { value: 'unzipFile', label: 'unzipFile' },
+        { value: 'fileHash', label: 'fileHash' },
+        { value: 'openFile', label: 'openFile' },
     ]);
+    
 
     const [args, setArgs] = useState([
         { id: 1, value: 'Option 1' },
@@ -23,6 +40,32 @@ function Box({ canvasOffset, addBox }) {
         addBox();
         setIsButtonVisible(false); // Hide the button after clicking
     };
+
+    function getFunctionArguments(functionName) {
+        const functionArgsMap = {
+            listFiles: ["folderPath"],
+            renameFile: ["folderPath", "oldName", "newName"],
+            addFile: ["folderPath", "fileName"],
+            addFolder: ["folderPath"],
+            moveFile: ["folderPath", "fileName", "targetPath"],
+            copyFile: ["folderPath", "fileName", "targetPath"],
+            deleteFile: ["filePath"],
+            deleteFolder: ["folderPath"],
+            checkFileExists: ["filePath"],
+            getFileDetails: ["filePath"],
+            readFile: ["filePath"],
+            writeFile: ["filePath", "content"],
+            listSubfolders: ["folderPath"],
+            recursiveFolderListing: ["folderPath"],
+            countFilesInFolder: ["folderPath"],
+            zipFolder: ["folderPath", "zipPath"],
+            unzipFile: ["zipPath", "targetPath"],
+            fileHash: ["filePath"],
+            openFile: ["filePath"],
+        };
+    
+        return functionArgsMap[functionName] || null;
+    }
 
     const handleEditArgsClick = () => {
         if (selectedStep) {
@@ -42,6 +85,12 @@ function Box({ canvasOffset, addBox }) {
 
     const handleStepChange = (e) => {
         setSelectedStep(e.target.value); // Update selected step
+        const argumentNames = getFunctionArguments(e.target.value);
+        const formattedArgs = argumentNames.map((arg, index) => ({
+            id: index + 1,
+            value: arg,
+        }));
+        setArgs(formattedArgs);
     };
 
     // Calculate the position of the "+" button
