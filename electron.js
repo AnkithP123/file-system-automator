@@ -71,27 +71,3 @@ ipcMain.handle("copy-file", async (event, folderPath, fileName, targetPath) => {
         throw new Error(`Failed to copy file: ${error.message}`);
     }
 });
-
-ipcMain.handle("sort-files-in-folder", async (event, folderPath, fileType) => {
-    try {
-        const files = fs.readdirSync(folderPath);
-        
-        // Filter and sort files by the specified type
-        const filteredFiles = files.filter(file => file.endsWith(`.${fileType}`)).sort();
-
-        const sortedFiles = [...filteredFiles, ...files.filter(file => !file.endsWith(`.${fileType}`))];
-
-        // Rename files to reflect the new order with temporary prefixes
-        for (let i = 0; i < sortedFiles.length; i++) {
-            const oldPath = path.join(folderPath, sortedFiles[i]);
-            const newPath = path.join(folderPath, `${i.toString().padStart(3, '0')}_${sortedFiles[i]}`);
-            fs.renameSync(oldPath, newPath);
-        }
-
-                                            
-
-        return sortedFiles;
-    } catch (error) {
-        throw new Error(`Failed to sort files: ${error.message}`);
-    }
-});

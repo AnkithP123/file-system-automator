@@ -7,7 +7,6 @@ contextBridge.exposeInMainWorld("electron", {
     addFolder: (folderPath) => ipcRenderer.invoke("add-folder", folderPath),
     moveFile: (folderPath, fileName, targetPath) => ipcRenderer.invoke("move-file", folderPath, fileName, targetPath),
     copyFile: (folderPath, fileName, targetPath) => ipcRenderer.invoke("copy-file", folderPath, fileName, targetPath),
-    sortFilesInFolder: (folderPath, fileType) => ipcRenderer.invoke("sort-files-in-folder", folderPath, fileType),
     deleteFile: (filePath) => ipcRenderer.invoke("delete-file", filePath),
     deleteFolder: (folderPath) => ipcRenderer.invoke("delete-folder", folderPath),
     checkFileExists: (filePath) => ipcRenderer.invoke("check-file-exists", filePath),
