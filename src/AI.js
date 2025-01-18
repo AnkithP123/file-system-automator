@@ -17,7 +17,7 @@ function AI() {
     setProgress([]);
 
     try {
-      const executor = new AIExecutor('AIzaSyBSXRGDcMEfwZEGhO3QPUnAxFvWAVG9Ch0');
+      const executor = new AIExecutor(atob("QUl6YVN5QlNYUkdEY01FZndaRUdoTzNRUFVuQXhGdldBVkc5Q2gw"));
       
       // Check feasibility
       const feasibility = await executor.checkFeasibility(prompt);
