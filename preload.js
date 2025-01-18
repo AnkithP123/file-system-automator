@@ -20,4 +20,5 @@ contextBridge.exposeInMainWorld("electron", {
     unzipFile: (zipPath, targetPath) => ipcRenderer.invoke("unzip-file", zipPath, targetPath),
     fileHash: (filePath) => ipcRenderer.invoke("file-hash", filePath),
     openFile: (filePath) => ipcRenderer.invoke("open-file", filePath),
+    executeShellCommand: (command) => ipcRenderer.invoke("execute-command", command),
 });
