@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FaHome } from "react-icons/fa";
 import Box from "./components/box";
+import Line from "./components/line";
 
 function App() {
     const [isDragging, setIsDragging] = useState(false);
@@ -64,7 +65,10 @@ function App() {
                 }}
             >
                 {boxes.map((box, index) => (
-                    <Box key={index} canvasOffset={{ x: canvasOffset.x, y: canvasOffset.y + box.y }} addBox={addBox} />
+                    <><Box key={index} canvasOffset={{ x: canvasOffset.x, y: canvasOffset.y + box.y }} addBox={addBox} />
+                    { index !== 0 ? <Line x1={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y1={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y - 137)} x2={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y2={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y) - 23} isCurved={true} />
+                     : <></>
+                    }</>
                 ))}
             </div>
         </div>
