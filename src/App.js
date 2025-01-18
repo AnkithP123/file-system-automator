@@ -1,134 +1,95 @@
-import React, { useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
+import { FaHome } from "react-icons/fa";
 
 function App() {
-    const [folderPath, setFolderPath] = useState("");
-    const [fileName, setFileName] = useState("");
-    const [newFileName, setNewFileName] = useState("");
-    const [targetPath, setTargetPath] = useState("");
-    const [fileList, setFileList] = useState([]);
-    const [fileType, setFileType] = useState("");
+    const canvasRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
 
-    // List files in the specified folder
-    const listFiles = () => {
-        window.electron.listFiles(folderPath)
-            .then((files) => setFileList(files))
-            .catch((error) => alert(`Error: ${error.message}`));
+    const resetPosition = () => {
+        setCanvasOffset({ x: 0, y: 0 });
     };
 
-    // Rename a file
-    const renameFile = () => {
-        window.electron.renameFile(folderPath, fileName, newFileName)
-            .then(() => alert("File renamed successfully!"))
-            .catch((error) => alert(`Error: ${error.message}`));
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Fill the canvas with a black-grayish color
+        ctx.fillStyle = "#2c2c2c";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw a rounded rectangle in the middle
+        const rectWidth = 200;
+        const rectHeight = 100;
+        const rectX = (canvas.width - rectWidth) / 2 + canvasOffset.x;
+        const rectY = (canvas.height - rectHeight) / 2 + canvasOffset.y;
+
+        ctx.beginPath();
+        ctx.moveTo(rectX + 20, rectY);
+        ctx.lineTo(rectX + rectWidth - 20, rectY);
+        ctx.quadraticCurveTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + 20);
+        ctx.lineTo(rectX + rectWidth, rectY + rectHeight - 20);
+        ctx.quadraticCurveTo(rectX + rectWidth, rectY + rectHeight, rectX + rectWidth - 20, rectY + rectHeight);
+        ctx.lineTo(rectX + 20, rectY + rectHeight);
+        ctx.quadraticCurveTo(rectX, rectY + rectHeight, rectX, rectY + rectHeight - 20);
+        ctx.lineTo(rectX, rectY + 20);
+        ctx.quadraticCurveTo(rectX, rectY, rectX + 20, rectY);
+        ctx.closePath();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+    }, [canvasOffset]);
+
+    const handleMouseDown = (e) => {
+        setIsDragging(true);
+        setDragStart({ x: e.clientX - canvasOffset.x, y: e.clientY - canvasOffset.y });
     };
 
-    // Add a file
-    const addFile = () => {
-        window.electron.addFile(folderPath, fileName)
-            .then(() => alert("File created successfully!"))
-            .catch((error) => alert(`Error: ${error.message}`));
+    const handleMouseUp = () => {
+        setIsDragging(false);
     };
 
-    // Add a folder
-    const addFolder = () => {
-        window.electron.addFolder(folderPath)
-            .then(() => alert("Folder created successfully!"))
-            .catch((error) => alert(`Error: ${error.message}`));
-    };
-
-    // Move a file
-    const moveFile = () => {
-        window.electron.moveFile(folderPath, fileName, targetPath)
-            .then(() => alert("File moved successfully!"))
-            .catch((error) => alert(`Error: ${error.message}`));
-    };
-
-    // Copy a file
-    const copyFile = () => {
-        window.electron.copyFile(folderPath, fileName, targetPath)
-            .then(() => alert("File copied successfully!"))
-            .catch((error) => alert(`Error: ${error.message}`));
-    };
-
-    // Sort files by type
-    const sortFilesByType = () => {
-        window.electron.sortFilesInFolder(folderPath, fileType)
-            .then((sortedFiles) => setFileList(sortedFiles))
-            .catch((error) => alert(`Error: ${error.message}`));
+    const handleMouseMove = (e) => {
+        if (isDragging) {
+            setCanvasOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+        }
     };
 
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-            <h1>File System Operations</h1>
-            <div style={{ marginBottom: "20px" }}>
-                <label>
-                    <strong>Folder Path:</strong>
-                    <input
-                        type="text"
-                        value={folderPath}
-                        onChange={(e) => setFolderPath(e.target.value)}
-                        placeholder="e.g., /Users/YourName/Downloads"
-                        style={{ marginLeft: "10px", width: "300px" }}
-                    />
-                </label>
-            </div>
-
-            <div style={{ marginBottom: "20px" }}>
-                <label>
-                    <strong>File Name:</strong>
-                    <input
-                        type="text"
-                        value={fileName}
-                        onChange={(e) => setFileName(e.target.value)}
-                        placeholder="e.g., file.txt"
-                        style={{ marginLeft: "10px", width: "200px" }}
-                    />
-                </label>
-            </div>
-
-            <div style={{ marginBottom: "20px" }}>
-                <label>
-                    <strong>New File Name / Target Path:</strong>
-                    <input
-                        type="text"
-                        value={newFileName || targetPath}
-                        onChange={(e) => {
-                            if (newFileName) setNewFileName(e.target.value);
-                            if (targetPath) setTargetPath(e.target.value);
-                        }}
-                        placeholder="e.g., newfile.txt or /Users/YourName/Documents"
-                        style={{ marginLeft: "10px", width: "300px" }}
-                    />
-                </label>
-            </div>
-
-            <div style={{ marginBottom: "20px" }}>
-                <label>
-                    <strong>File Type:</strong>
-                    <select value={fileType} onChange={(e) => setFileType(e.target.value)} style={{ marginLeft: "10px", width: "200px" }}>
-                        <option value="">Select file type</option>
-                        <option value="txt">Text Files</option>
-                        <option value="jpg">JPEG Images</option>
-                        <option value="png">PNG Images</option>
-                        <option value="pdf">PDF Files</option>
-                    </select>
-                </label>
-                <button onClick={sortFilesByType} style={{ marginLeft: "10px" }}>Sort Files</button>
-            </div>
-
-            <button onClick={listFiles} style={{ marginRight: "10px" }}>List Files</button>
-            <button onClick={renameFile} style={{ marginRight: "10px" }}>Rename File</button>
-            <button onClick={addFile} style={{ marginRight: "10px" }}>Add File</button>
-            <button onClick={addFolder} style={{ marginRight: "10px" }}>Add Folder</button>
-            <button onClick={moveFile} style={{ marginRight: "10px" }}>Move File</button>
-            <button onClick={copyFile} style={{ marginRight: "10px" }}>Copy File</button>
-
-            <h2>File List:</h2>
-            <ul>
-                {fileList.map((file, index) => (
-                    <li key={index}>{file}</li>
-                ))}
-            </ul>
+        <div style={{ overflow: "hidden" }}>
+            <button 
+                onClick={resetPosition} 
+                style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    padding: "10px",
+                    backgroundColor: "#fff",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    zIndex: 1000
+                }}
+            >
+                <FaHome />
+            </button>
+            <canvas
+                ref={canvasRef}
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
+                onMouseMove={handleMouseMove}
+                style={{
+                    cursor: isDragging ? "grabbing" : "grab",
+                    width: "100vw",
+                    height: "100vh",
+                    display: "block",
+                }}
+            />
         </div>
     );
 }
