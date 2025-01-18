@@ -6,7 +6,7 @@ let mainWindow;
 
 app.on('ready', () => {
     // Serve the Next.js build using http-server
-    const server = createServer({ root: path.join(__dirname, 'out') });
+    const server = createServer({ root: path.join(__dirname, 'build') });
     const PORT = 12345;
 
     server.listen(PORT, () => {
