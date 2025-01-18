@@ -6,6 +6,7 @@ function App() {
     const [newFileName, setNewFileName] = useState("");
     const [targetPath, setTargetPath] = useState("");
     const [fileList, setFileList] = useState([]);
+    const [fileType, setFileType] = useState("");
 
     // List files in the specified folder
     const listFiles = () => {
@@ -46,6 +47,13 @@ function App() {
     const copyFile = () => {
         window.electron.copyFile(folderPath, fileName, targetPath)
             .then(() => alert("File copied successfully!"))
+            .catch((error) => alert(`Error: ${error.message}`));
+    };
+
+    // Sort files by type
+    const sortFilesByType = () => {
+        window.electron.sortFilesInFolder(folderPath, fileType)
+            .then((sortedFiles) => setFileList(sortedFiles))
             .catch((error) => alert(`Error: ${error.message}`));
     };
 
@@ -92,6 +100,20 @@ function App() {
                         style={{ marginLeft: "10px", width: "300px" }}
                     />
                 </label>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+                <label>
+                    <strong>File Type:</strong>
+                    <select value={fileType} onChange={(e) => setFileType(e.target.value)} style={{ marginLeft: "10px", width: "200px" }}>
+                        <option value="">Select file type</option>
+                        <option value="txt">Text Files</option>
+                        <option value="jpg">JPEG Images</option>
+                        <option value="png">PNG Images</option>
+                        <option value="pdf">PDF Files</option>
+                    </select>
+                </label>
+                <button onClick={sortFilesByType} style={{ marginLeft: "10px" }}>Sort Files</button>
             </div>
 
             <button onClick={listFiles} style={{ marginRight: "10px" }}>List Files</button>
