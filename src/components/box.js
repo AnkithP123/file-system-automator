@@ -1,9 +1,11 @@
-// Box.js
-import React from 'react';
+import React, { useState } from 'react';
 
 function Box({ canvasOffset, addBox }) {
+    const [isButtonVisible, setIsButtonVisible] = useState(true);
+
     const handleAddBoxClick = () => {
-        addBox(0); // Add new box 10 pixels below the current one
+        addBox();
+        setIsButtonVisible(false); // Hide the button after clicking
     };
 
     // Calculate the position of the "+" button
@@ -23,28 +25,30 @@ function Box({ canvasOffset, addBox }) {
                     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
                 }}
             ></div>
-            <button 
-                onClick={handleAddBoxClick}
-                style={{
-                    position: 'absolute',
-                    top: `${rectHeight - 18}px`,
-                    left: `${rectWidth / 2 - 20}px`,
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: '#007bff',
-                    color: '#fff',
-                    border: 'none',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    fontSize: '24px',
-                    cursor: 'pointer',
-                    zIndex: 1000,
-                }}
-            >
-                +
-            </button>
+            {isButtonVisible && (
+                <button 
+                    onClick={handleAddBoxClick}
+                    style={{
+                        position: 'absolute',
+                        top: `${rectHeight - 18}px`,
+                        left: `${rectWidth / 2 - 20}px`,
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: '#007bff',
+                        color: '#fff',
+                        border: 'none',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        fontSize: '24px',
+                        cursor: 'pointer',
+                        zIndex: 1000,
+                    }}
+                >
+                    +
+                </button>
+            )}
         </div>
     );
 }
