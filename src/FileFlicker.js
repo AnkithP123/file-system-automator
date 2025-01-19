@@ -10,7 +10,6 @@ function FileFlicker() {
     const [receivedFiles, setReceivedFiles] = useState([]);
     const [isFlicking, setIsFlicking] = useState(false);
     const [isReceiving, setIsReceiving] = useState(false);
-    const [deviceName, setDeviceName] = useState(`Device-${Math.random().toString(36).slice(2, 7)}`);
 
     useEffect(() => {
         // Fetch the local IP address
@@ -36,19 +35,14 @@ function FileFlicker() {
 
     useEffect(() => {
         const fetchDevices = async () => {
-            try {
-                const response = await fetch(`${API_URL}/devices`);
-                const devices = await response.json();
-                setDiscoveredDevices(devices.filter(device => device.ip !== localIp));
-            } catch (error) {
-                console.error('Failed to fetch devices:', error);
-            }
+            const devices = await window.electron.discoverDevices();
+            setDiscoveredDevices(devices);
         };
 
-        fetchDevices();
-        const interval = setInterval(fetchDevices, 5000);
-        return () => clearInterval(interval);
-    }, [localIp]);
+        const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
+
+        return () => clearInterval(interval); // Cleanup on unmount
+    }, []);
 
     const addFile = async () => {
         const filePath = await window.electron.selectFile();
