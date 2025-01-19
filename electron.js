@@ -54,7 +54,7 @@ ipcMain.handle("file:send", async (event, targetIp, files) => {
             const fileStream = fs.createReadStream(file.path);
             const options = {
                 hostname: targetIp,
-                port: 4100,
+                port: 4141,
                 path: "/upload",
                 method: "POST",
                 headers: {
@@ -127,7 +127,7 @@ function startFileReceiver() {
         }
     });
 
-    const port = 4100; // Port for the receiver server
+    const port = 4141; // Port for the receiver server
     server.listen(port, () => {
         console.log(`File receiver listening on http://${getLocalIp()}:${port}`);
     });
