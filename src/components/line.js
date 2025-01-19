@@ -28,8 +28,8 @@ function Line({ x1, y1, x2, y2, isCurved }) {
             {/* Draw the line with the arrowhead marker at the end */}
             <path
                 d={linePath}
-                stroke="#000"
-                strokeWidth="4"
+                stroke="#555" // Lighter stroke color
+                strokeWidth="2" // Reduced stroke width
                 fill="none"
             />
         </svg>

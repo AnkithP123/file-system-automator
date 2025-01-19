@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const crypto = require("crypto");
 const archiver = require("archiver");
 const unzipper = require("unzipper");
 const { exec } = require("child_process");
@@ -23,14 +22,15 @@ app.on("ready", () => {
 
 // Utility function for responses
 function createResponse(success, data = {}, message = "") {
-    return { success, data, message };
+    return { success, ...data, message };
 }
 
 // --- File Operations ---
 ipcMain.handle("create-file", async (event, filePath) => {
     try {
         fs.writeFileSync(filePath, "");
-        return createResponse(true, { filePath }, "File created successfully!");
+        const stats = fs.statSync(filePath);
+        return createResponse(true, { filePath, size: stats.size, modified: stats.mtime }, "File created successfully!");
     } catch (error) {
         return createResponse(false, {}, `Failed to create file: ${error.message}`);
     }
@@ -39,7 +39,8 @@ ipcMain.handle("create-file", async (event, filePath) => {
 ipcMain.handle("read-file", async (event, filePath) => {
     try {
         const content = fs.readFileSync(filePath, "utf8");
-        return createResponse(true, { content }, "File read successfully!");
+        const stats = fs.statSync(filePath);
+        return createResponse(true, { filePath, content, size: stats.size, modified: stats.mtime }, "File read successfully!");
     } catch (error) {
         return createResponse(false, {}, `Failed to read file: ${error.message}`);
     }
@@ -48,7 +49,8 @@ ipcMain.handle("read-file", async (event, filePath) => {
 ipcMain.handle("append-to-file", async (event, filePath, content) => {
     try {
         fs.appendFileSync(filePath, content);
-        return createResponse(true, { filePath }, "Content appended successfully!");
+        const stats = fs.statSync(filePath);
+        return createResponse(true, { filePath, size: stats.size, modified: stats.mtime }, "Content appended successfully!");
     } catch (error) {
         return createResponse(false, {}, `Failed to append to file: ${error.message}`);
     }
@@ -63,11 +65,44 @@ ipcMain.handle("delete-file", async (event, filePath) => {
     }
 });
 
+ipcMain.handle("rename-file", async (event, filePath, newFilePath) => {
+    try {
+        fs.renameSync(filePath, newFilePath);
+        const stats = fs.statSync(newFilePath);
+        return createResponse(true, { oldPath: filePath, newPath: newFilePath, size: stats.size, modified: stats.mtime }, "File renamed successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to rename file: ${error.message}`);
+    }
+});
+
+ipcMain.handle("move-file", async (event, filePath, destinationPath) => {
+    try {
+        const newFilePath = path.join(destinationPath, path.basename(filePath));
+        fs.renameSync(filePath, newFilePath);
+        const stats = fs.statSync(newFilePath);
+        return createResponse(true, { oldPath: filePath, newPath: newFilePath, size: stats.size, modified: stats.mtime }, "File moved successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to move file: ${error.message}`);
+    }
+});
+
+ipcMain.handle("copy-file", async (event, filePath, destinationPath) => {
+    try {
+        const newFilePath = path.join(destinationPath, path.basename(filePath));
+        fs.copyFileSync(filePath, newFilePath);
+        const stats = fs.statSync(newFilePath);
+        return createResponse(true, { originalPath: filePath, copiedPath: newFilePath, size: stats.size, modified: stats.mtime }, "File copied successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to copy file: ${error.message}`);
+    }
+});
+
 // --- Directory Operations ---
 ipcMain.handle("create-directory", async (event, folderPath) => {
     try {
         fs.mkdirSync(folderPath, { recursive: true });
-        return createResponse(true, { folderPath }, "Directory created successfully!");
+        const stats = fs.statSync(folderPath);
+        return createResponse(true, { folderPath, created: stats.ctime }, "Directory created successfully!");
     } catch (error) {
         return createResponse(false, {}, `Failed to create directory: ${error.message}`);
     }
@@ -82,11 +117,12 @@ ipcMain.handle("list-directory", async (event, folderPath) => {
                 name: item,
                 path: fullPath,
                 isDirectory: stats.isDirectory(),
-                size: stats.size,
+                size: stats.isDirectory() ? 0 : stats.size,
                 modified: stats.mtime,
+                created: stats.ctime,
             };
         });
-        return createResponse(true, { items }, "Directory listed successfully!");
+        return createResponse(true, { folderPath, items }, "Directory listed successfully!");
     } catch (error) {
         return createResponse(false, {}, `Failed to list directory: ${error.message}`);
     }
@@ -101,57 +137,72 @@ ipcMain.handle("delete-directory", async (event, folderPath) => {
     }
 });
 
+ipcMain.handle("recursive-folder-stats", async (event, folderPath) => {
+    try {
+        const files = [];
+        const collectFiles = (dir) => {
+            fs.readdirSync(dir).forEach((item) => {
+                const fullPath = path.join(dir, item);
+                const stats = fs.statSync(fullPath);
+                if (stats.isDirectory()) {
+                    collectFiles(fullPath);
+                } else {
+                    files.push({ name: item, path: fullPath, size: stats.size, modified: stats.mtime });
+                }
+            });
+        };
+        collectFiles(folderPath);
+        const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+        return createResponse(true, { folderPath, files, totalSize }, "Recursive folder stats retrieved successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to retrieve folder stats: ${error.message}`);
+    }
+});
+
 // --- Advanced Operations ---
-ipcMain.handle("compress-files", async (event, files, zipPath) => {
+ipcMain.handle("compress-folder", async (event, folderPath, zipPath) => {
     try {
         const archive = archiver("zip", { zlib: { level: 9 } });
         const output = fs.createWriteStream(zipPath);
 
-        files.forEach((file) => archive.file(file, { name: path.basename(file) }));
+        archive.directory(folderPath, false);
         archive.pipe(output);
         await archive.finalize();
 
-        return createResponse(true, { zipPath }, "Files compressed successfully!");
+        return createResponse(true, { zipPath }, "Folder compressed successfully!");
     } catch (error) {
-        return createResponse(false, {}, `Failed to compress files: ${error.message}`);
+        return createResponse(false, {}, `Failed to compress folder: ${error.message}`);
+    }
+});
+
+ipcMain.handle("unzip-file", async (event, zipPath, targetPath) => {
+    try {
+        const directory = await unzipper.Open.file(zipPath);
+        await directory.extract({ path: targetPath });
+        return createResponse(true, { zipPath, targetPath }, "File unzipped successfully!");
+    } catch (error) {
+        return createResponse(false, {}, `Failed to unzip file: ${error.message}`);
     }
 });
 
 ipcMain.handle("execute-command", async (event, command) => {
-    console.log("Executing", command);
     try {
-        toReturn = await new Promise((resolve) => {
-            const timeout = setTimeout(() => {
-                resolve(createResponse(false, {}, "Command execution timed out (10s) or was waiting for you to enter something. Maybe try again with flags, if you know there was the possibility for user input or confirmation."));
-            }, 10000); // 5 seconds timeout
-
+        return await new Promise((resolve) => {
             exec(command, (error, stdout, stderr) => {
-            clearTimeout(timeout);
-            if (error) {
-                resolve(createResponse(false, {}, `Failed to execute command: ${error.message}`));
-            } else {
-                resolve(createResponse(true, { output: stdout }, "Command executed successfully!"));
-            }
+                if (error) {
+                    resolve(createResponse(false, {}, `Failed to execute command: ${error.message}`));
+                } else {
+                    resolve(createResponse(true, { output: stdout }, "Command executed successfully!"));
+                }
             });
         });
-        console.log('toReturn:', toReturn);
-        return toReturn;
     } catch (error) {
         return createResponse(false, {}, `Failed to execute command: ${error.message}`);
     }
 });
 
-// --- Utilities ---
-ipcMain.handle("open-file", async (event, filePath) => {
-    try {
-        shell.openPath(filePath);
-        return createResponse(true, { filePath }, "File opened successfully!");
-    } catch (error) {
-        return createResponse(false, {}, `Failed to open file: ${error.message}`);
-    }
-});
-
-ipcMain.handle("search-files", async (event, folderPath, searchTerm) => {
+// --- Additional Programmer Utilities ---
+ipcMain.handle("search-content", async (event, folderPath, searchTerm) => {
     try {
         const matches = [];
         const search = (dir) => {
@@ -159,14 +210,17 @@ ipcMain.handle("search-files", async (event, folderPath, searchTerm) => {
                 const fullPath = path.join(dir, item);
                 if (fs.statSync(fullPath).isDirectory()) {
                     search(fullPath);
-                } else if (item.includes(searchTerm)) {
-                    matches.push(fullPath);
+                } else {
+                    const content = fs.readFileSync(fullPath, "utf8");
+                    if (content.includes(searchTerm)) {
+                        matches.push(fullPath);
+                    }
                 }
             });
         };
         search(folderPath);
-        return createResponse(true, { matches }, "Search completed successfully!");
+        return createResponse(true, { folderPath, matches }, "Search completed successfully!");
     } catch (error) {
-        return createResponse(false, {}, `Failed to search files: ${error.message}`);
+        return createResponse(false, {}, `Failed to search content: ${error.message}`);
     }
 });

@@ -49,7 +49,7 @@ function App() {
     };
 
     return (
-        <div style={{ overflow: "hidden", backgroundColor: "#2c2c2c", width: "100vw", height: "100vh" }}>
+        <div style={{ overflow: "hidden", backgroundColor: "#2c2c2c", width: "100vw", height: "100vh", overflow: "hidden" }}>
             <button 
                 onClick={resetPosition} 
                 style={{
@@ -73,7 +73,8 @@ function App() {
                 style={{
                     cursor: isDragging ? "grabbing" : "grab",
                     width: "100%",
-                    height: "100%"
+                    height: "100%",
+                    overflow: "hidden",
                 }}
             >
                 {boxes.map((box, index) => (
