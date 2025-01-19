@@ -38,8 +38,6 @@ function AI() {
     setError(null);
     setProgress([]);
 
-    
-
     try {
       const executor = new AIExecutor(getNextKey());
       
@@ -54,13 +52,11 @@ function AI() {
       const command = await executor.beginTask(prompt);
       setProgress(prev => [...prev, { success: true, summary: `Initial command: ${command}` }]);
 
-      // Execute task
-      const result = await executor.executeTask(prompt);
-      setProgress(prev => [
-        ...prev,
-        ...result.taskSummary,
-        { success: true, summary: result.finalSummary }
-      ]);
+      // Execute task with progress callback
+      const result = await executor.executeTask(prompt, (stepSummary) => {
+        setProgress(prev => [...prev, stepSummary]);
+      });
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
       setProgress(prev => [...prev, { success: false, summary: "Task execution failed" }]);

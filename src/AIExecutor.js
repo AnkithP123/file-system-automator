@@ -59,7 +59,7 @@ class AIExecutor {
         const message = `Begin this task based on the prompt: "${prompt}". Provide the first command to execute. You can ONLY respond with the command and nothing else. If you are COMPLETELY unable to complete the task with only terminal commands, respond with exactly 'task:impossible' followed by a brief explanation.`;
         const response = await this.sendMessage(message);
         if (response.toLowerCase().includes("task:impossible")) {
-            throw new Error(`Task is impossible: ${response.replace(/task:impossible/i, "").trim()}`);
+            throw new Error(`Task deemed impossible: ${response.replace(/task:impossible/i, "").trim()}`);
         }
         return response;
     }
@@ -86,7 +86,7 @@ class AIExecutor {
             return "Task completed";
         }
         if (response.toLowerCase().includes("task:impossible")) {
-            throw new Error(`Task is impossible: ${response.replace(/task:impossible/i, "").trim()}`);
+            throw new Error(`Task deemed impossible: ${response.replace(/task:impossible/i, "").trim()}`);
         }
         return response;
     }
@@ -97,7 +97,7 @@ class AIExecutor {
         return response;
     }
 
-    async executeTask(prompt) {
+    async executeTask(prompt, onProgress) {
         const feasibility = await this.checkFeasibility(prompt);
         if (!feasibility.feasible) {
             throw new Error(`Task is not feasible: ${feasibility.message}`);
@@ -109,23 +109,20 @@ class AIExecutor {
 
         while (!taskCompleted) {
             await new Promise(r => setTimeout(r, 3000));
-            // Execute the command (this part is abstracted, assuming a function executeCommand exists)
             const commandOutput = await this.executeCommand(command);
 
             const stepSummary = await this.getStepSummary(commandOutput);
             taskSummary.push(stepSummary);
+            onProgress && onProgress(stepSummary); // Call the progress callback
 
-            if (stepSummary.success) {
-                command = await this.getNextCommand(commandOutput);
-                if (command.toLowerCase().includes("task completed")) {
-                    taskCompleted = true;
-                }
-            } else {
-                throw new Error(`Command execution failed: ${stepSummary.summary}`);
+            command = await this.getNextCommand(commandOutput);
+            if (command.toLowerCase().includes("task completed")) {
+                taskCompleted = true;
             }
         }
 
         const finalSummary = await this.finalizeTask();
+        onProgress && onProgress({ success: true, summary: finalSummary }); // Final update
         return {
             taskSummary,
             finalSummary,

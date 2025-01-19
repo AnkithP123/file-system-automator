@@ -120,13 +120,19 @@ ipcMain.handle("compress-files", async (event, files, zipPath) => {
 ipcMain.handle("execute-command", async (event, command) => {
     console.log("Executing", command);
     try {
-        let toReturn;
-        exec(command, (error, stdout, stderr) => {
+        toReturn = await new Promise((resolve) => {
+            const timeout = setTimeout(() => {
+                resolve(createResponse(false, {}, "Command execution timed out (10s) or was waiting for you to enter something. Maybe try again with flags, if you know there was the possibility for user input or confirmation."));
+            }, 10000); // 5 seconds timeout
+
+            exec(command, (error, stdout, stderr) => {
+            clearTimeout(timeout);
             if (error) {
-                toReturn = createResponse(false, {}, `Failed to execute command: ${error.message}`);
+                resolve(createResponse(false, {}, `Failed to execute command: ${error.message}`));
+            } else {
+                resolve(createResponse(true, { output: stdout }, "Command executed successfully!"));
             }
-            else
-                toReturn = createResponse(true, { output: stdout }, "Command executed successfully!");
+            });
         });
         console.log('toReturn:', toReturn);
         return toReturn;
