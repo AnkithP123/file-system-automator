@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaTrash, FaFolder, FaFileAlt, FaWifi, FaPlus, FaPaperPlane } from "react-icons/fa";
+import './FileFlicker.css';
 
 function FileFlicker() {
     const [files, setFiles] = useState([]);
@@ -7,6 +8,8 @@ function FileFlicker() {
     const [targetIp, setTargetIp] = useState("");
     const [discoveredDevices, setDiscoveredDevices] = useState([]);
     const [receivedFiles, setReceivedFiles] = useState([]);
+    const [isFlicking, setIsFlicking] = useState(false);
+    const [isReceiving, setIsReceiving] = useState(false);
 
     useEffect(() => {
         // Fetch the local IP address
@@ -19,7 +22,14 @@ function FileFlicker() {
 
         // Listen for received files
         window.electron.onFileReceived((data) => {
-            setReceivedFiles((prev) => [...prev, data]);
+            setIsReceiving(true);
+            setTimeout(() => setIsReceiving(false), 1500);
+            setReceivedFiles((prev) => {
+                if (prev.some(file => file.fileName === data.fileName && file.filePath === data.filePath)) {
+                    return prev;
+                }
+                return [...prev, data];
+            });
         });
     }, []);
 
@@ -88,12 +98,16 @@ function FileFlicker() {
     };
 
     const handleFlick = async () => {
+        setIsFlicking(true);
+        setTimeout(() => setIsFlicking(false), 1500); // Reset animation after 1.5 seconds
+
         const response = await window.electron.sendFileToIp(targetIp, files);
         console.log("Flick result:", response);
     };
 
     return (
         <div
+            className={`file-flicker-container ${isReceiving ? "receiving" : ""}`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             style={{
@@ -187,11 +201,12 @@ function FileFlicker() {
                             padding: "8px",
                             background: "#444",
                             borderRadius: "4px",
+                            animation: isFlicking ? "flick 0.5s ease-in-out" : "none",
                         }}
                     >
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             {file.type === "folder" ? <FaFolder /> : <FaFileAlt />}
-                            <span>{file.name}</span>
+                            <span>{file.path}</span>
                         </div>
                         <button
                             onClick={() => removeFile(file.id)}
@@ -209,8 +224,7 @@ function FileFlicker() {
             </div>
 
             {/* Received Files */}
-            <div style={{ padding: "16px", borderTop: "1px solid #444" }}>
-                <h3 style={{ color: "#fff" }}>Received Files</h3>
+            <div style={{ padding: "16px", borderTop: "1px solid #444", overflowY: "auto", maxHeight: "150px", minHeight: "100px", animation: isReceiving ? "glow 1.5s infinite" : "none",}}>
                 {receivedFiles.map((file, index) => (
                     <div key={index} style={{ color: "#fff", marginBottom: "8px" }}>
                         {file.fileName} saved to {file.filePath}

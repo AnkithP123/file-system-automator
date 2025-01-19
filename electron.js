@@ -97,7 +97,28 @@ ipcMain.handle("dialog:openFolder", async () => {
 ipcMain.handle("file:send", async (event, targetIp, files) => {
     try {
         for (const file of files) {
-            const fileStream = fs.createReadStream(file.path);
+            let filePath = file.path;
+            let fileName = file.name;
+
+            if (fs.statSync(filePath).isDirectory()) {
+                const zipPath = `${filePath}.zip`;
+                await new Promise((resolve, reject) => {
+                    const output = fs.createWriteStream(zipPath);
+                    const archive = archiver("zip", { zlib: { level: 9 } });
+
+                    output.on("close", resolve);
+                    archive.on("error", reject);
+
+                    archive.pipe(output);
+                    archive.directory(filePath, false);
+                    archive.finalize();
+                });
+
+                filePath = zipPath;
+                fileName = `${fileName}.zip`;
+            }
+
+            const fileStream = fs.createReadStream(filePath);
             const options = {
                 hostname: targetIp,
                 port: 4141,
@@ -105,7 +126,7 @@ ipcMain.handle("file:send", async (event, targetIp, files) => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/octet-stream",
-                    "Content-Disposition": `attachment; filename="${file.name}"`,
+                    "Content-Disposition": `attachment; filename="${fileName}"`,
                 },
             };
 
@@ -152,6 +173,8 @@ function startFileReceiver() {
             const filePath = path.join(uploadDir, fileName);
             const fileStream = fs.createWriteStream(filePath);
 
+            mainWindow.webContents.send("file-received", { fileName, filePath });
+
             req.pipe(fileStream);
 
             req.on("end", () => {
@@ -159,7 +182,6 @@ function startFileReceiver() {
                 res.end("File uploaded successfully.");
 
                 // Notify the renderer process
-                mainWindow.webContents.send("file-received", { fileName, filePath });
             });
 
             req.on("error", (err) => {
