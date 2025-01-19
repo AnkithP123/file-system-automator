@@ -31,6 +31,27 @@ function FileFlicker() {
                 return [...prev, data];
             });
         });
+
+        // Listen for file pool updates
+        window.electron.onFilePoolUpdated((newFiles) => {
+            console.log("New files:", newFiles);
+            setFiles((prevFiles) => {
+                const droppedFiles = Array.from(event.dataTransfer.files).map((file) => ({
+                    id: Math.random().toString(36).slice(2),
+                    name: file.split("/").pop(),
+                    path: file,
+                    size: 0,
+                    type: "file"
+                }));
+                const newFiles = droppedFiles.filter(file => !files.some(existingFile => existingFile.path === file.path));
+                if (newFiles.length < droppedFiles.length) {
+                    alert("Some files/folders already exist in the list.");
+                }
+                setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+        
+                return [...prevFiles, ...files];
+            });
+        });
     }, []);
 
     useEffect(() => {

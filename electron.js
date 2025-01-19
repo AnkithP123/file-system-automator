@@ -7,6 +7,7 @@ const { exec } = require("child_process");
 const http = require("http");
 const os = require("os");
 const dgram = require("dgram");
+const glob = require("glob");
 
 let mainWindow;
 
@@ -48,7 +49,6 @@ function startDeviceDiscovery() {
     // Listen for broadcast messages
     udpSocket.on("message", (msg, rinfo) => {
         try {
-            console.log("Received UDP message:", msg.toString());
             const data = JSON.parse(msg.toString());
             if (data.name === "FileFlicker") {
                 devices.set(data.ip, { name: data.name, ip: data.ip, timestamp: Date.now() });
@@ -216,7 +216,6 @@ function getLocalIp() {
 
 // Simulate device discovery on the network
 ipcMain.handle("network:discover", async () => {
-    console.log("Devices discovered:", devices);
     return Array.from(devices.values());
 });
 
@@ -384,19 +383,71 @@ ipcMain.handle("unzip-file", async (event, zipPath, targetPath) => {
 
 ipcMain.handle("execute-command", async (event, command) => {
     try {
-        return await new Promise((resolve) => {
-            exec(command, (error, stdout, stderr) => {
-                if (error) {
-                    resolve(createResponse(false, {}, `Failed to execute command: ${error.message}`));
-                } else {
-                    resolve(createResponse(true, { output: stdout }, "Command executed successfully!"));
-                }
+        const [cmd, ...args] = command.match(/(?:[^\s"]+|"[^"]*")+/g).map(arg => arg.replace(/(^"|"$)/g, ''));
+        console.log("Command:", cmd);
+        console.log("Arguments:", args);
+        if (cmd === "file_pool") {
+            const filePattern = args[0];
+            const files = glob.sync(filePattern);
+            // Add files to the pool (you can implement your own pool logic)
+            filePool.push(...files);
+            console.log('Files: ', files);            
+            mainWindow.webContents.send("file-pool-update", {files});
+
+            console.log("Files added to pool:", filePool);
+            return createResponse(true, { output: "Files added to pool successfully!" }, "Files added to pool successfully!");
+        } else if (cmd === "flick") {
+            const targetIp = args[0];
+            // Implement your flick logic here
+            // For example, send files from the pool to the target IP
+            for (const file of filePool) {
+                await sendFile(targetIp, file);
+            }
+            return createResponse(true, { output:  "Files flicked successfully!"}, "Files flicked successfully!");
+        } else {
+            return await new Promise((resolve) => {
+                exec(command, (error, stdout, stderr) => {
+                    if (error) {
+                        resolve(createResponse(false, {}, `Failed to execute command: ${error.message}`));
+                    } else {
+                        resolve(createResponse(true, { output: stdout }, "Command executed successfully!"));
+                    }
+                });
             });
-        });
+        }
     } catch (error) {
         return createResponse(false, {}, `Failed to execute command: ${error.message}`);
     }
 });
+
+const filePool = [];
+
+function sendFile(targetIp, filePath) {
+    console.log(`Sending file to ${targetIp}: ${filePath}`);
+    return new Promise((resolve, reject) => {
+        const fileName = path.basename(filePath);
+        const fileStream = fs.createReadStream(filePath);
+        const options = {
+            hostname: targetIp,
+            port: 4141,
+            path: "/upload",
+            method: "POST",
+            headers: {
+                "Content-Type": "application/octet-stream",
+                "Content-Disposition": `attachment; filename="${fileName}"`,
+            },
+        };
+
+        const req = http.request(options, (res) => {
+            console.log(`File sent. Server responded with: ${res.statusCode}`);
+            resolve();
+        });
+
+        fileStream.pipe(req);
+        fileStream.on("end", () => req.end());
+        req.on("error", reject);
+    });
+}
 
 // --- Additional Programmer Utilities ---
 ipcMain.handle("search-content", async (event, folderPath, searchTerm) => {
