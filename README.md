@@ -15,8 +15,8 @@ Flicker is a file management application that allows users to manage files and f
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/flicker-file-management.git
-    cd flicker-file-management
+    git clone https://github.com/AnkithP123/file-system-automator.git
+    cd file-system-automator
     ```
 
 2. Install dependencies:
