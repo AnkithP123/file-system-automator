@@ -44,13 +44,17 @@ function FileFlicker() {
         return () => clearInterval(interval); // Cleanup on unmount
     }, []);
 
-
     const addFile = async () => {
         const filePath = await window.electron.selectFile();
         if (filePath) {
+            const fileName = filePath.split("/").pop();
+            if (files.some(file => file.path === filePath)) {
+                alert("File already exists in the list.");
+                return;
+            }
             const mockFile = {
                 id: Math.random().toString(36).slice(2),
-                name: filePath.split("/").pop(),
+                name: fileName,
                 path: filePath,
                 size: 0,
                 type: "file",
@@ -62,9 +66,14 @@ function FileFlicker() {
     const addFolder = async () => {
         const folderPath = await window.electron.selectFolder();
         if (folderPath) {
+            const folderName = folderPath.split("/").pop();
+            if (files.some(file => file.path === folderPath)) {
+                alert("Folder already exists in the list.");
+                return;
+            }
             const mockFolder = {
                 id: Math.random().toString(36).slice(2),
-                name: folderPath.split("/").pop(),
+                name: folderName,
                 path: folderPath,
                 size: 0,
                 type: "folder",
@@ -82,7 +91,11 @@ function FileFlicker() {
             size: file.size,
             type: file.type ? "file" : "folder",
         }));
-        setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
+        const newFiles = droppedFiles.filter(file => !files.some(existingFile => existingFile.path === file.path));
+        if (newFiles.length < droppedFiles.length) {
+            alert("Some files/folders already exist in the list.");
+        }
+        setFiles((prevFiles) => [...prevFiles, ...newFiles]);
     };
 
     const handleDragOver = (event) => {
@@ -202,11 +215,13 @@ function FileFlicker() {
                             background: "#444",
                             borderRadius: "4px",
                             animation: isFlicking ? "flick 0.5s ease-in-out" : "none",
+                            wordWrap: "break-word",
+                            overflowWrap: "break-word",
                         }}
                     >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
                             {file.type === "folder" ? <FaFolder /> : <FaFileAlt />}
-                            <span>{file.path}</span>
+                            <span style={{ wordWrap: "break-word", overflowWrap: "anywhere" }}>{file.path}</span>
                         </div>
                         <button
                             onClick={() => removeFile(file.id)}
@@ -289,8 +304,6 @@ function FileFlicker() {
                         ))}
                     </div>
                 )}
-
-
 
                 {/* Flick Files Button */}
                 <button
