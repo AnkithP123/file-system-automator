@@ -60,6 +60,7 @@ function startDeviceDiscovery() {
 
     // Listen for broadcast messages
     udpSocket.on("message", (msg, rinfo) => {
+        console.log(`Received UDP message from ${rinfo.address}:${rinfo.port}`);
         try {
             const data = JSON.parse(msg.toString());
             if (data.name === "FileFlicker") {
