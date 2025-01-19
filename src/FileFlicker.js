@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaTrash, FaFolder, FaFileAlt, FaWifi, FaPlus, FaPaperPlane } from "react-icons/fa";
 import './FileFlicker.css';
 
-const API_URL = 'http://localhost:3636';
+const API_URL = 'https://financial-game-backend.onrender.com';
 
 function FileFlicker() {
     const [files, setFiles] = useState([]);
