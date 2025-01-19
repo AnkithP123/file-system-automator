@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 contextBridge.exposeInMainWorld("electron", {
     createFile: (filePath) => ipcRenderer.invoke("create-file", filePath),
@@ -16,4 +16,14 @@ contextBridge.exposeInMainWorld("electron", {
     unzipFile: (zipPath, targetPath) => ipcRenderer.invoke("unzip-file", zipPath, targetPath),
     executeShellCommand: (command) => ipcRenderer.invoke("execute-command", command),
     searchContent: (folderPath, searchTerm) => ipcRenderer.invoke("search-content", folderPath, searchTerm),
+    sendFiles: (filePaths) => ipcRenderer.send("files-dropped", filePaths),
+    selectFile: () =>
+        ipcRenderer.invoke("dialog:openFile").then((result) => result || null),
+    selectFolder: () =>
+        ipcRenderer.invoke("dialog:openFolder").then((result) => result || null),
+    getPathForFile: (file) => webUtils.getPathForFile(file),
+    getLocalIp: () => ipcRenderer.invoke("get-local-ip"),
+    sendFileToIp: (targetIp, files) => ipcRenderer.invoke("file:send", targetIp, files),
+    discoverDevices: () => ipcRenderer.invoke("network:discover"),
+
 });

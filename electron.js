@@ -1,9 +1,10 @@
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const archiver = require("archiver");
 const unzipper = require("unzipper");
 const { exec } = require("child_process");
+const os = require("os");
 
 let mainWindow;
 
@@ -24,6 +25,77 @@ app.on("ready", () => {
 function createResponse(success, data = {}, message = "") {
     return { success, ...data, message };
 }
+
+ipcMain.on("files-dropped", (event, filePaths) => {
+    console.log("Files dropped:", filePaths);
+    // You can process the file paths here if needed
+});
+
+ipcMain.handle("dialog:openFile", async () => {
+    const result = await dialog.showOpenDialog({
+        properties: ["openFile"],
+    });
+    return result.filePaths[0]; // Return the selected file path
+});
+
+ipcMain.handle("dialog:openFolder", async () => {
+    const result = await dialog.showOpenDialog({
+        properties: ["openDirectory"],
+    });
+    return result.filePaths[0]; // Return the selected folder path
+});
+
+ipcMain.handle("file:send", async (event, targetIp, files) => {
+    try {
+        for (const file of files) {
+            const fileStream = fs.createReadStream(file.path);
+            const options = {
+                hostname: targetIp,
+                port: 3000,
+                path: "/upload",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/octet-stream",
+                    "Content-Disposition": `attachment; filename="${file.name}"`,
+                },
+            };
+
+            const req = http.request(options, (res) => {
+                console.log(`File sent. Server responded with: ${res.statusCode}`);
+            });
+
+            fileStream.pipe(req);
+            fileStream.on("end", () => req.end());
+        }
+
+        return "Files sent successfully!";
+    } catch (error) {
+        console.error("Error sending files:", error);
+        return "Failed to send files.";
+    }
+});
+
+ipcMain.handle("get-local-ip", async () => {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === "IPv4" && !iface.internal) {
+                return iface.address; // Return the first non-internal IPv4 address
+            }
+        }
+    }
+    return "127.0.0.1"; // Fallback to localhost
+});
+
+
+// Simulate device discovery on the network
+ipcMain.handle("network:discover", async () => {
+    return [
+        { name: "Living Room PC", ip: "192.168.1.101" },
+        { name: "Kitchen Tablet", ip: "192.168.1.102" },
+    ]; // Replace with actual network discovery logic
+});
+
 
 // --- File Operations ---
 ipcMain.handle("create-file", async (event, filePath) => {

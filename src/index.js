@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import AI from './AI';
+import FileFlicker from './FileFlicker';
 import reportWebVitals from './reportWebVitals';
 
 const RootComponent = () => {
@@ -13,6 +14,8 @@ const RootComponent = () => {
       setComponent(<App />);
     } else if (choice === 'AI') {
       setComponent(<AI />);
+    } else if (choice === 'FileFlicker') {
+      setComponent(<FileFlicker />);
     } else {
       alert("Invalid choice. Please try again.");
     }
@@ -24,6 +27,7 @@ const RootComponent = () => {
         <div>
           <button onClick={() => handleSelection('App')}>Show App Component</button>
           <button onClick={() => handleSelection('AI')}>Show AI Component</button>
+          <button onClick={() => handleSelection('FileFlicker')}>Show FileFlicker Component</button>
         </div>
       ) : (
         component
