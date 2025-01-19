@@ -1,6 +1,11 @@
 import React from 'react';
+import { FaMousePointer } from 'react-icons/fa';
 
 function Modal({ args, onArgChange, onClose }) {
+    const handleMouseClick = () => {
+        console.log("hi");
+    };
+
     return (
         <div style={{
             position: 'fixed',
@@ -12,7 +17,8 @@ function Modal({ args, onArgChange, onClose }) {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 1000
+            zIndex: 1000,
+            pointerEvents: 'auto' // Allow interactions with the modal
         }}>
             <div style={{
                 width: '400px',
@@ -26,21 +32,38 @@ function Modal({ args, onArgChange, onClose }) {
                 <h2 style={{ textAlign: 'center', fontWeight: 'bold' }}>Arguments Editor</h2>
                 <div style={{ margin: '20px 0' }}>
                     {args.map((arg) => (
-                        <div key={arg.id} style={{ marginBottom: '10px' }}>
-                            <label>{`Argument ${arg.id}  (${arg.value}):`}</label>
+                        <div key={arg.id} style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+                            <label style={{ marginRight: '10px' }}>{`Argument ${arg.id} (${arg.value}):`}</label>
                             <textarea
                                 name={`Arg #${arg.id}:`}
-                                value={''}
+                                value={arg.value}
                                 onChange={(e) => onArgChange(arg.id, e.target.value)}
                                 style={{
-                                    width: '100%',
+                                    width: 'calc(100% - 40px)',
                                     padding: '8px',
                                     borderRadius: '5px',
                                     border: '1px solid #ccc',
                                     boxSizing: 'border-box',
-                                    marginBottom: '20px'
+                                    marginRight: '20px'
                                 }}
                             />
+                            <button
+                                onClick={handleMouseClick}
+                                style={{
+                                    width: '60px',
+                                    height: '40px',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    borderRadius: '5px',
+                                    backgroundColor: '#007bff',
+                                    color: '#fff',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <FaMousePointer />
+                            </button>
                         </div>
                     ))}
                 </div>
@@ -48,7 +71,7 @@ function Modal({ args, onArgChange, onClose }) {
                     onClick={onClose}
                     style={{
                         position: 'absolute',
-                        bottom: '10px',
+                        bottom: '5px',
                         right: '20px',
                         padding: '10px',
                         backgroundColor: '#ff0000',
