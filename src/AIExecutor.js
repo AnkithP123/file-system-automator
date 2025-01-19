@@ -9,7 +9,7 @@ class AIExecutor {
         this.genAI = new GoogleGenerativeAI(apiKey);
         this.model = this.genAI.getGenerativeModel({
             model: "gemini-1.5-flash",
-            systemInstruction: "You are an assistant helping execute file system tasks based on user prompts. Follow each instruction accurately and provide feedback for each step.",
+            systemInstruction: `You are an assistant helping execute file system tasks based on user prompts. You execute tasks by running shell commands whenever you are asked for them. A shell command can be run by simply typing out the command with no other text when you are told. Follow each instruction accurately and provide feedback for each step. The user's operating system is ${navigator.userAgent}.`,
         });
         this.generationConfig = {
             temperature: 0.7,
@@ -56,8 +56,11 @@ class AIExecutor {
 
 
     async beginTask(prompt) {
-        const message = `Begin this task based on the prompt: "${prompt}". Provide the first command to execute.`;
+        const message = `Begin this task based on the prompt: "${prompt}". Provide the first command to execute. You can ONLY respond with the command and nothing else. If you are COMPLETELY unable to complete the task with only terminal commands, respond with exactly 'task:impossible' followed by a brief explanation.`;
         const response = await this.sendMessage(message);
+        if (response.toLowerCase().includes("task:impossible")) {
+            throw new Error(`Task is impossible: ${response.replace(/task:impossible/i, "").trim()}`);
+        }
         return response;
     }
 
@@ -77,8 +80,14 @@ class AIExecutor {
     }
 
     async getNextCommand(previousOutput) {
-        const message = `Based on the previous output: "${previousOutput}", provide the next command to execute.`;
+        const message = `Based on the previous output: "${previousOutput}", provide the next command to execute. If the task is completed, respond with 'task:completed'. If you are COMPLETELY unable to complete the task with only terminal commands, respond with 'task:impossible' followed by a brief explanation.`;
         const response = await this.sendMessage(message);
+        if (response.toLowerCase().includes("task:completed")) {
+            return "Task completed";
+        }
+        if (response.toLowerCase().includes("task:impossible")) {
+            throw new Error(`Task is impossible: ${response.replace(/task:impossible/i, "").trim()}`);
+        }
         return response;
     }
 
@@ -99,6 +108,7 @@ class AIExecutor {
         let taskSummary = [];
 
         while (!taskCompleted) {
+            await new Promise(r => setTimeout(r, 3000));
             // Execute the command (this part is abstracted, assuming a function executeCommand exists)
             const commandOutput = await this.executeCommand(command);
 
@@ -124,9 +134,14 @@ class AIExecutor {
 
     // Mock implementation of executeCommand
     async executeCommand(command) {
-        // This is a mock implementation. In a real application,
-        // this would actually execute the command
-        return `Executed command: ${command}`;
+        let result = await window.electron.executeShellCommand(command);
+        console.log('OUTPUT2:', result);
+        if (result.success) {
+            return result.data.output;
+        } else {
+            return result.message;
+        }
+        
     }
 }
 

@@ -7,6 +7,28 @@ function AI() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState(null);
   const [progress, setProgress] = useState([]);
+  const [index, setIndex] = useState(0);
+
+    const getNextKey = () => {
+        setIndex(index + 1);
+        console.log(index);
+        const keys = [
+            atob("QUl6YVN5QlNYUkdEY01FZndaRUdoTzNRUFVuQXhGdldBVkc5Q2gw"),
+            atob("QUl6YVN5REc2MjE3MS05NzVpWVlGWUtLb3EwMU1XS0RFS0NmOTdZ"),
+            atob("QUl6YVN5RHhaWjdzU1d1VmdJaXFkajhKMUEwTXNTYWRpOEVMWWZZ"),
+            atob("QUl6YVN5RFJ6SEtJSW9FQUFYSENPaXdqSlBCWWJhRmEwUTYxMzJz"),
+            atob("QUl6YVN5RGZOVnNKallZSjNsNFZQT2c3YmFCMkVPQkRuZjhnQTR3"),
+            atob("QUl6YVN5Q3lnZUxMWndvQ29wWkZYR05zXzZKZk1qZkZyNVRabHBN"),
+            atob("QUl6YVN5QzJ1YzcwLWVNM2JNVkNZSVdpNjVvM1hTbm1xaUh0eUY0"),
+            atob("QUl6YVN5QTNXYWVhSUhqVXpCcGJvcmRHMEppd1BpWFJDdTkzNTFz")
+        ]
+        
+        if (index >= keys.length) {
+            setIndex(0);
+        }
+
+        return keys[index];
+    };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,8 +38,10 @@ function AI() {
     setError(null);
     setProgress([]);
 
+    
+
     try {
-      const executor = new AIExecutor(atob("QUl6YVN5QlNYUkdEY01FZndaRUdoTzNRUFVuQXhGdldBVkc5Q2gw"));
+      const executor = new AIExecutor(getNextKey());
       
       // Check feasibility
       const feasibility = await executor.checkFeasibility(prompt);

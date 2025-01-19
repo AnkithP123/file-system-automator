@@ -118,11 +118,18 @@ ipcMain.handle("compress-files", async (event, files, zipPath) => {
 });
 
 ipcMain.handle("execute-command", async (event, command) => {
+    console.log("Executing", command);
     try {
+        let toReturn;
         exec(command, (error, stdout, stderr) => {
-            if (error) throw new Error(stderr);
-            return createResponse(true, { output: stdout }, "Command executed successfully!");
+            if (error) {
+                toReturn = createResponse(false, {}, `Failed to execute command: ${error.message}`);
+            }
+            else
+                toReturn = createResponse(true, { output: stdout }, "Command executed successfully!");
         });
+        console.log('toReturn:', toReturn);
+        return toReturn;
     } catch (error) {
         return createResponse(false, {}, `Failed to execute command: ${error.message}`);
     }
