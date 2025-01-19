@@ -11,7 +11,7 @@ Flicker is a file management application that allows users to manage files and f
 - [Scripts](#scripts)
 - [License](#license)
 
-## Installation
+## Manual Installation
 
 1. Clone the repository:
     ```sh
@@ -28,6 +28,18 @@ Flicker is a file management application that allows users to manage files and f
     ```sh
     npm run electron
     ```
+
+## Mac App Download (much preferred, shows local devices and features are more likely to work)
+
+1. Download [this dmg](https://drive.google.com/file/d/1JxvUd2ATbLJdom_eDISwdllNR8ngAcwC/view?usp=sharing)
+   
+2. If it fails to open because it is 'damaged', open System Settings.
+   
+    2a. Then navigate to Privacy & Security and scroll down
+
+    2b. Select Allow applications from 'anywhere', and then reopen the app (you can change this back after running the app and Flicker will still run)
+
+3. It should work!
 
 ## Usage
 
