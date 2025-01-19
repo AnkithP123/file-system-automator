@@ -26,5 +26,9 @@ contextBridge.exposeInMainWorld("electron", {
     sendFileToIp: (targetIp, files) => ipcRenderer.invoke("file:send", targetIp, files),
     discoverDevices: () => ipcRenderer.invoke("network:discover"),
     onFileReceived: (callback) => ipcRenderer.on("file-received", (event, data) => callback(data)),
+    getComputerName: async () => {
+        // You can use OS module to get computer name
+        return require('os').hostname();
+      }
 
 });
