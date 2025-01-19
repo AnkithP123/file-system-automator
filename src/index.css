@@ -11,3 +11,21 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.flicker-container {
+  width: 300px;
+  background-color: #000;
+  animation: flicker 0.1s infinite;
+}
+
+.ai-container {
+  flex: 1;
+  background-color: #f0f0f0;
+  /* Add any other styling for the AI container */
+}
+
