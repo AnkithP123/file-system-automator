@@ -54,7 +54,7 @@ Flicker is a file management application that allows users to manage files and f
 
 4. It should work!
 
-## Mac App Download (much preferred for PCs, shows local devices and features are more likely to work)
+## Windows App Download (much preferred for PCs, shows local devices and features are more likely to work)
 
 1. Download [this exe](https://drive.google.com/file/d/1Lue0MxkHTmtgHvYglxbnNtO__IYkX59z/view?usp=drive_link)
    
