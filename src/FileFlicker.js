@@ -15,6 +15,46 @@ function FileFlicker() {
     const [deviceName, setDeviceName] = useState(`Device-${Math.random().toString(36).slice(2, 7)}`);
 
     useEffect(() => {
+        // Register device and start heartbeat
+        const registerDevice = async () => {
+            try {
+                const response = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: deviceName })
+                });
+                const data = await response.json();
+                setLocalIp(data.ip);
+            } catch (error) {
+                console.error('Registration failed:', error);
+            }
+        };
+
+        registerDevice();
+
+        // Start heartbeat
+        const heartbeatInterval = setInterval(async () => {
+            try {
+                await fetch(`${API_URL}/heartbeat`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('Heartbeat failed:', error);
+            }
+        }, 10000);
+
+        // Start checking for received files
+        const checkFilesInterval = setInterval(checkForFiles, 5000);
+
+        return () => {
+            clearInterval(heartbeatInterval);
+            clearInterval(checkFilesInterval);
+        };
+    }, [deviceName]);
+
+
+
+    useEffect(() => {
         // Fetch the local IP address
         window.electron.getLocalIp().then((ip) => setLocalIp(ip));
 
@@ -40,18 +80,32 @@ function FileFlicker() {
     useEffect(() => {
         const fetchDevices = async () => {
             try {
+                // Fetch devices from the Electron API
+                const electronDevices = await window.electron.discoverDevices();
+    
+                // Fetch devices from the REST API
                 const response = await fetch(`${API_URL}/devices`);
-                const devices = await response.json();
-                setDiscoveredDevices(devices.filter(device => device.ip !== localIp));
+                const apiDevices = await response.json();
+    
+                // Combine the results, filtering as needed
+                const combinedDevices = [
+                    ...electronDevices,
+                    ...apiDevices.filter(device => device.ip !== localIp),
+                ];
+    
+                // Update the discovered devices state
+                setDiscoveredDevices(combinedDevices);
             } catch (error) {
                 console.error('Failed to fetch devices:', error);
             }
         };
-
+    
         fetchDevices();
-        const interval = setInterval(fetchDevices, 5000);
-        return () => clearInterval(interval);
+        const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
+    
+        return () => clearInterval(interval); // Cleanup on unmount
     }, [localIp]);
+    
 
     const checkForFiles = async () => {
         try {
