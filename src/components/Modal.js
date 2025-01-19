@@ -6,6 +6,7 @@ function Modal({ args, onArgChange, onClose, boxes, currentBoxIndex }) {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedArg, setSelectedArg] = useState(null);
     const [dropdownOptions, setDropdownOptions] = useState([]);
+    const [boxIndex, setBoxIndex] = useState(null);
 
     const handleMouseClick = (argId) => {
         setIsSelectionMode(true);
@@ -13,7 +14,8 @@ function Modal({ args, onArgChange, onClose, boxes, currentBoxIndex }) {
     };
 
     const handleBoxSelection = (boxIndex, boxArgs) => {
-        console.log('boxIndex:', boxArgs);
+        console.log('boxIndex:', boxIndex);
+        setBoxIndex(boxIndex);
         if (selectedArg !== null && boxIndex !== currentBoxIndex) {
             if (typeof boxArgs === 'object' && boxArgs !== null) {
                 const options = Object.keys(boxArgs);
@@ -34,9 +36,10 @@ function Modal({ args, onArgChange, onClose, boxes, currentBoxIndex }) {
 
     const handleDropdownSelection = (selection) => {
         if (selection && dropdownOptions.includes(selection)) {
-            onArgChange(selectedArg, JSON.stringify(boxes.find(box => box.returnType[selection])[selection]));
+            console.log('selection:', selection);
+            onArgChange(selectedArg,  'Box ' + (boxIndex + 1) + ': ' + selection);
             setIsSelectionMode(false);
-            setSelectedArg(null);
+            setSelectedArg('Box ' + (boxIndex + 1) + ': ' + selection);
             setDropdownOptions([]);
         } else {
             alert('Invalid selection. Please try again.');
