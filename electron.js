@@ -11,6 +11,16 @@ const glob = require("glob");
 
 let mainWindow;
 
+const httpServer = require('http-server');
+
+function startHttpServer() {
+    const server = httpServer.createServer({ root: path.join(__dirname, 'build') });
+    server.listen(3001, () => {
+        console.log('HTTP server listening on http://localhost:3001');
+    });
+}
+
+
 app.on("ready", () => {
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -21,11 +31,13 @@ app.on("ready", () => {
         },
     });
 
-    mainWindow.loadURL("http://localhost:3000");
+    mainWindow.loadURL("http://localhost:3001");
 
     startFileReceiver();
 
     startDeviceDiscovery();
+
+    startHttpServer();
 });
 
 
