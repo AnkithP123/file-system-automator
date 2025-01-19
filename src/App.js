@@ -68,9 +68,9 @@ function AppContent() {
                         {index !== 0 && (
                             <Line
                                 x1={((window.innerWidth - 300) / 2 + canvasOffset.x) + 150}
-                                y1={(window.innerHeight - 150) / 2 + (canvasOffset.y + box.y - 140)}
+                                y1={(window.innerHeight - 150) / 2 + (canvasOffset.y + box.y - 115)}
                                 x2={((window.innerWidth - 300) / 2 + canvasOffset.x) + 150}
-                                y2={(window.innerHeight - 150) / 2 + (canvasOffset.y + box.y) - 25}
+                                y2={(window.innerHeight - 150) / 2 + (canvasOffset.y + box.y)}
                                 isCurved={true}
                             />
                         )}
