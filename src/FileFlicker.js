@@ -15,42 +15,26 @@ function FileFlicker() {
     const [deviceName, setDeviceName] = useState(`Device-${Math.random().toString(36).slice(2, 7)}`);
 
     useEffect(() => {
-        // Register device and start heartbeat
-        const registerDevice = async () => {
-            try {
-                const response = await fetch(`${API_URL}/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: deviceName })
-                });
-                const data = await response.json();
-                setLocalIp(data.ip);
-            } catch (error) {
-                console.error('Registration failed:', error);
-            }
-        };
+        // Fetch the local IP address
+        window.electron.getLocalIp().then((ip) => setLocalIp(ip));
 
-        registerDevice();
+        // Discover devices on the network
+        window.electron.discoverDevices().then((devices) => {
+            setDiscoveredDevices(devices);
+        });
 
-        // Start heartbeat
-        const heartbeatInterval = setInterval(async () => {
-            try {
-                await fetch(`${API_URL}/heartbeat`, {
-                    method: 'POST'
-                });
-            } catch (error) {
-                console.error('Heartbeat failed:', error);
-            }
-        }, 10000);
-
-        // Start checking for received files
-        const checkFilesInterval = setInterval(checkForFiles, 5000);
-
-        return () => {
-            clearInterval(heartbeatInterval);
-            clearInterval(checkFilesInterval);
-        };
-    }, [deviceName]);
+        // Listen for received files
+        window.electron.onFileReceived((data) => {
+            setIsReceiving(true);
+            setTimeout(() => setIsReceiving(false), 1500);
+            setReceivedFiles((prev) => {
+                if (prev.some(file => file.fileName === data.fileName && file.filePath === data.filePath)) {
+                    return prev;
+                }
+                return [...prev, data];
+            });
+        });
+    }, []);
 
     // Check for available devices periodically
     useEffect(() => {
