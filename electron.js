@@ -4,6 +4,7 @@ const fs = require("fs");
 const archiver = require("archiver");
 const unzipper = require("unzipper");
 const { exec } = require("child_process");
+const http = require("http");
 const os = require("os");
 
 let mainWindow;
@@ -19,6 +20,8 @@ app.on("ready", () => {
     });
 
     mainWindow.loadURL("http://localhost:3000");
+
+    startFileReceiver();
 });
 
 // Utility function for responses
@@ -51,7 +54,7 @@ ipcMain.handle("file:send", async (event, targetIp, files) => {
             const fileStream = fs.createReadStream(file.path);
             const options = {
                 hostname: targetIp,
-                port: 3000,
+                port: 4100,
                 path: "/upload",
                 method: "POST",
                 headers: {
@@ -86,6 +89,61 @@ ipcMain.handle("get-local-ip", async () => {
     }
     return "127.0.0.1"; // Fallback to localhost
 });
+
+function startFileReceiver() {
+    const server = http.createServer((req, res) => {
+        if (req.method === "POST" && req.url === "/upload") {
+            const contentDisposition = req.headers["content-disposition"];
+            const fileName = contentDisposition
+                ? contentDisposition.split("filename=")[1].replace(/"/g, "")
+                : `file_${Date.now()}`;
+
+            const uploadDir = path.join(app.getPath("downloads"), "FileFlicker"); // Save files to Downloads/FileFlicker
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
+            const filePath = path.join(uploadDir, fileName);
+            const fileStream = fs.createWriteStream(filePath);
+
+            req.pipe(fileStream);
+
+            req.on("end", () => {
+                res.writeHead(200, { "Content-Type": "text/plain" });
+                res.end("File uploaded successfully.");
+
+                // Notify the renderer process
+                mainWindow.webContents.send("file-received", { fileName, filePath });
+            });
+
+            req.on("error", (err) => {
+                console.error("File upload error:", err);
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                res.end("Failed to upload file.");
+            });
+        } else {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end("Not Found");
+        }
+    });
+
+    const port = 4100; // Port for the receiver server
+    server.listen(port, () => {
+        console.log(`File receiver listening on http://${getLocalIp()}:${port}`);
+    });
+}
+
+function getLocalIp() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === "IPv4" && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return "127.0.0.1"; // Fallback to localhost
+}
 
 
 // Simulate device discovery on the network
