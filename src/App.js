@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaHome } from "react-icons/fa";
 import Box from "./components/box";
 import Line from "./components/line";
@@ -8,6 +8,18 @@ function App() {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
     const [boxes, setBoxes] = useState([{ y: 0 }]);
+
+    useEffect(() => {
+        const handleWheel = (e) => {
+            e.preventDefault();
+        };
+
+        window.addEventListener("wheel", handleWheel, { passive: false });
+
+        return () => {
+            window.removeEventListener("wheel", handleWheel);
+        };
+    }, []);
 
     const resetPosition = () => {
         setCanvasOffset({ x: 0, y: 0 });
@@ -66,7 +78,7 @@ function App() {
             >
                 {boxes.map((box, index) => (
                     <><Box key={index} canvasOffset={{ x: canvasOffset.x, y: canvasOffset.y + box.y }} addBox={addBox} />
-                    { index !== 0 ? <Line x1={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y1={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y - 125)} x2={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y2={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y) - 40} isCurved={true} />
+                    { index !== 0 ? <Line x1={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y1={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y - 140)} x2={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y2={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y) - 25} isCurved={true} />
                      : <></>
                     }</>
                 ))}

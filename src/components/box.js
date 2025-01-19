@@ -170,7 +170,7 @@ function Box({ canvasOffset, addBox }) {
                         alignItems: 'center',
                         fontSize: '24px',
                         cursor: 'pointer',
-                        zIndex: 1000,
+                        zIndex: 2,
                     }}
                 >
                     +
