@@ -242,7 +242,7 @@ function FileFlicker() {
             <div style={{ padding: "16px", borderTop: "1px solid #444", overflowY: "auto", maxHeight: "150px", minHeight: "100px", animation: isReceiving ? "glow 1.5s infinite" : "none",}}>
                 {receivedFiles.map((file, index) => (
                     <div key={index} style={{ color: "#fff", marginBottom: "8px" }}>
-                        {file.fileName} saved to {file.filePath}
+                        Receiving {file.fileName}. Saving to {file.filePath}
                     </div>
                 ))}
             </div>

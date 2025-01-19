@@ -171,9 +171,9 @@ function startFileReceiver() {
             }
 
             const filePath = path.join(uploadDir, fileName);
+            mainWindow.webContents.send("file-received", { fileName, filePath });
             const fileStream = fs.createWriteStream(filePath);
 
-            mainWindow.webContents.send("file-received", { fileName, filePath });
 
             req.pipe(fileStream);
 
