@@ -138,7 +138,7 @@ ipcMain.handle("file:send", async (event, targetIp, files) => {
             fileStream.on("end", () => req.end());
         }
 
-        return "Files sent successfully!";
+        return "Files sent successfully!: " + files.map((file) => file.name).join(", ");
     } catch (error) {
         console.error("Error sending files:", error);
         return "Failed to send files.";
@@ -172,6 +172,7 @@ function startFileReceiver() {
 
             const filePath = path.join(uploadDir, fileName);
             mainWindow.webContents.send("file-received", { fileName, filePath });
+            console.log(`Receiving file: ${filePath}`);
             const fileStream = fs.createWriteStream(filePath);
 
 
@@ -387,22 +388,40 @@ ipcMain.handle("execute-command", async (event, command) => {
         console.log("Command:", cmd);
         console.log("Arguments:", args);
         if (cmd === "file_pool") {
-            const filePattern = args[0];
+            let filePattern = command.split(" ")[1];
+
+            // automatically expand user's home directory
+            if (filePattern.startsWith("~")) {
+                filePattern = path.join(os.homedir(), filePattern.slice(1));
+            }
+
             const files = glob.sync(filePattern);
-            // Add files to the pool (you can implement your own pool logic)
-            filePool.push(...files);
+            
+            let pool = [];
+
+            for (let i = 0; i < files.length; i++) {
+                let file = files[i];
+                let fileStats = fs.statSync(file);
+                pool.push({
+                    id: Math.random().toString(36).slice(2),
+                    name: path.basename(file),
+                    path: file,
+                    size: fileStats.size,
+                    modified: fileStats.mtime,
+                });
+            }
+
+            filePool.push(...pool);
+                    
+            
             console.log('Files: ', files);            
-            mainWindow.webContents.send("file-pool-update", {files});
+            mainWindow.webContents.send("file-added", {pool});
 
             console.log("Files added to pool:", filePool);
             return createResponse(true, { output: "Files added to pool successfully!" }, "Files added to pool successfully!");
         } else if (cmd === "flick") {
             const targetIp = args[0];
-            // Implement your flick logic here
-            // For example, send files from the pool to the target IP
-            for (const file of filePool) {
-                await sendFile(targetIp, file);
-            }
+            mainWindow.webContents.send("flick", { targetIp });
             return createResponse(true, { output:  "Files flicked successfully!"}, "Files flicked successfully!");
         } else {
             return await new Promise((resolve) => {

@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "archiver": "^7.0.1",
     "archiver-utils": "^5.0.2",
+    "glob": "^11.0.1",
     "http-server": "^14.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

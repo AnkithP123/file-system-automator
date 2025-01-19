@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld("electron", {
     getComputerName: async () => {
         // You can use OS module to get computer name
         return require('os').hostname();
-      }
+      },
+    onAdd: (callback) => ipcRenderer.on("file-added", (event, data) => callback(data)),
+    onFlick: (callback) => ipcRenderer.on("flick", async (event, data) => await callback(data)),
 
 });

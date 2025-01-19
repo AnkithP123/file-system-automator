@@ -22,6 +22,7 @@ function FileFlicker() {
 
         // Listen for received files
         window.electron.onFileReceived((data) => {
+            console.log('HI');
             setIsReceiving(true);
             setTimeout(() => setIsReceiving(false), 1500);
             setReceivedFiles((prev) => {
@@ -30,6 +31,30 @@ function FileFlicker() {
                 }
                 return [...prev, data];
             });
+        });
+
+        window.electron.onAdd((data) => {
+            console.log("Files added:", data);
+            setFiles((prevFiles) => {
+                const newFiles = data.pool.filter(file => !prevFiles.some(existingFile => existingFile.path === file.path));
+                
+                return [...prevFiles, ...newFiles];
+            });
+        });
+
+        window.electron.onFlick(async (data) => {
+            console.log("Files flicked:", data);
+            setTargetIp(data.targetIp);
+            setIsFlicking(true);
+            setTimeout(() => setIsFlicking(false), 1500); // Reset animation after 1.5 seconds
+
+            console.log("Flicking files to", data.targetIp);
+
+            console.log("Files to flick:", files);
+    
+            const response = await window.electron.sendFileToIp(targetIp, files);
+            console.log("Flick result:", response);
+    
         });
     }, []);
 
@@ -96,6 +121,7 @@ function FileFlicker() {
             alert("Some files/folders already exist in the list.");
         }
         setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+        console.log("Files:", files);
     };
 
     const handleDragOver = (event) => {
@@ -221,7 +247,7 @@ function FileFlicker() {
                     >
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
                             {file.type === "folder" ? <FaFolder /> : <FaFileAlt />}
-                            <span style={{ wordWrap: "break-word", overflowWrap: "anywhere" }}>{file.path}</span>
+                            <span style={{ wordWrap: "break-word", overflowWrap: "anywhere" }}>{file.name}</span>
                         </div>
                         <button
                             onClick={() => removeFile(file.id)}

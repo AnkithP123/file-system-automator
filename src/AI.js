@@ -23,7 +23,7 @@ function AI() {
             atob("QUl6YVN5QTNXYWVhSUhqVXpCcGJvcmRHMEppd1BpWFJDdTkzNTFz")
         ]
         
-        if (index >= keys.length) {
+        if (index >= keys.length - 1) {
             setIndex(0);
         }
 
