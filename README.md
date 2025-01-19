@@ -40,13 +40,19 @@ Flicker is a file management application that allows users to manage files and f
 
 1. Download [this dmg](https://drive.google.com/file/d/1JxvUd2ATbLJdom_eDISwdllNR8ngAcwC/view?usp=sharing)
    
-2. If it fails to open because it is 'damaged', open System Settings.
+2. If it fails to open because it is 'damaged', close the app and do the following:
+
+    2a. Open Terminal and run the following command:
+           ```sh
+           sudo spctl --master-disable
+           ```
+        It should make you enter your password to disable the gatekeeper, and then confirm it in System Settings, which you should then open
    
-    2a. Then navigate to Privacy & Security and scroll down
+    2b. Then navigate to Privacy & Security and scroll down
 
-    2b. Select Allow applications from 'anywhere', and then reopen the app (you can change this back after running the app and Flicker will still run)
+    2c. Select Allow applications from 'Anywhere', and then reopen the app (you can change this back after running the app and Flicker will still run)
 
-3. It should work!
+4. It should work!
 
 ## Mac App Download (much preferred for PCs, shows local devices and features are more likely to work)
 
