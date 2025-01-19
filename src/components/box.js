@@ -1,70 +1,180 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
+import { useBoxContext } from './BoxContext';
 
-function Box({ canvasOffset, addBox }) {
+const Box = ({ canvasOffset, index, y }) => {
     const [isButtonVisible, setIsButtonVisible] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedStep, setSelectedStep] = useState(''); // State to track selected step
+    const [selectedStep, setSelectedStep] = useState('');
+    const { boxes, updateBox, addBox } = useBoxContext();
 
     const [steps, setSteps] = useState([
         { value: '', label: 'Select Step' },
-        { value: 'listFiles', label: 'listFiles' },
+        { value: 'createFile', label: 'createFile' },
+        { value: 'readFile', label: 'readFile' },
+        { value: 'appendToFile', label: 'appendToFile' },
+        { value: 'deleteFile', label: 'deleteFile' },
         { value: 'renameFile', label: 'renameFile' },
-        { value: 'addFile', label: 'addFile' },
-        { value: 'addFolder', label: 'addFolder' },
         { value: 'moveFile', label: 'moveFile' },
         { value: 'copyFile', label: 'copyFile' },
-        { value: 'deleteFile', label: 'deleteFile' },
-        { value: 'deleteFolder', label: 'deleteFolder' },
-        { value: 'checkFileExists', label: 'checkFileExists' },
-        { value: 'getFileDetails', label: 'getFileDetails' },
-        { value: 'readFile', label: 'readFile' },
-        { value: 'writeFile', label: 'writeFile' },
-        { value: 'listSubfolders', label: 'listSubfolders' },
-        { value: 'recursiveFolderListing', label: 'recursiveFolderListing' },
-        { value: 'countFilesInFolder', label: 'countFilesInFolder' },
-        { value: 'zipFolder', label: 'zipFolder' },
+        { value: 'createDirectory', label: 'createDirectory' },
+        { value: 'listDirectory', label: 'listDirectory' },
+        { value: 'deleteDirectory', label: 'deleteDirectory' },
+        { value: 'recursiveFolderStats', label: 'recursiveFolderStats' },
+        { value: 'compressFolder', label: 'compressFolder' },
         { value: 'unzipFile', label: 'unzipFile' },
-        { value: 'fileHash', label: 'fileHash' },
-        { value: 'openFile', label: 'openFile' },
+        { value: 'executeShellCommand', label: 'executeShellCommand' },
+        { value: 'searchContent', label: 'searchContent' },
     ]);
-    
 
-    const [args, setArgs] = useState([
-        { id: 1, value: 'Option 1' },
-        { id: 2, value: 'Option 2' },
-        { id: 3, value: 'Option 3' }
-    ]);
+    const [args, setArgs] = useState([]);
+    const [returnType, setReturnType] = useState(null);
 
     const handleAddBoxClick = () => {
         addBox();
-        setIsButtonVisible(false); // Hide the button after clicking
+        setIsButtonVisible(false);
     };
+
+    const functionReturnMap = {
+        "createFile": {
+            success: true,
+            filePath: "string",
+            size: "number",
+            modified: "Date",
+            message: "string",
+        },
+        "readFile": {
+            success: true,
+            filePath: "string",
+            content: "string",
+            size: "number",
+            modified: "Date",
+            message: "string",
+        },
+        "appendToFile": {
+            success: true,
+            filePath: "string",
+            size: "number",
+            modified: "Date",
+            message: "string",
+        },
+        "deleteFile": {
+            success: true,
+            filePath: "string",
+            message: "string",
+        },
+        "renameFile": {
+            success: true,
+            oldPath: "string",
+            newPath: "string",
+            size: "number",
+            modified: "Date",
+            message: "string",
+        },
+        "moveFile": {
+            success: true,
+            oldPath: "string",
+            newPath: "string",
+            size: "number",
+            modified: "Date",
+            message: "string",
+        },
+        "copyFile": {
+            success: true,
+            originalPath: "string",
+            copiedPath: "string",
+            size: "number",
+            modified: "Date",
+            message: "string",
+        },
+        "createDirectory": {
+            success: true,
+            folderPath: "string",
+            created: "Date",
+            message: "string",
+        },
+        "listDirectory": {
+            success: true,
+            folderPath: "string",
+            items: [
+                {
+                    name: "string",
+                    path: "string",
+                    isDirectory: "boolean",
+                    size: "number",
+                    modified: "Date",
+                    created: "Date",
+                },
+            ],
+            message: "string",
+        },
+        "deleteDirectory": {
+            success: true,
+            folderPath: "string",
+            message: "string",
+        },
+        "recursiveFolderStats": {
+            success: true,
+            folderPath: "string",
+            files: [
+                {
+                    name: "string",
+                    path: "string",
+                    size: "number",
+                    modified: "Date",
+                },
+            ],
+            totalSize: "number",
+            message: "string",
+        },
+        "compressFolder": {
+            success: true,
+            zipPath: "string",
+            message: "string",
+        },
+        "unzipFile": {
+            success: true,
+            zipPath: "string",
+            targetPath: "string",
+            message: "string",
+        },
+        "executeShellCommand": {
+            success: true,
+            output: "string",
+            message: "string",
+        },
+        "searchContent": {
+            success: true,
+            folderPath: "string",
+            matches: ["string"],
+            message: "string",
+        },
+    };
+    
+    function getFunctionReturnType(functionName) {
+        return functionReturnMap[functionName] || { error: "Return type not defined for this function" };
+    }
 
     function getFunctionArguments(functionName) {
         const functionArgsMap = {
-            listFiles: ["folderPath"],
-            renameFile: ["folderPath", "oldName", "newName"],
-            addFile: ["folderPath", "fileName"],
-            addFolder: ["folderPath"],
-            moveFile: ["folderPath", "fileName", "targetPath"],
-            copyFile: ["folderPath", "fileName", "targetPath"],
-            deleteFile: ["filePath"],
-            deleteFolder: ["folderPath"],
-            checkFileExists: ["filePath"],
-            getFileDetails: ["filePath"],
+            createFile: ["filePath"],
             readFile: ["filePath"],
-            writeFile: ["filePath", "content"],
-            listSubfolders: ["folderPath"],
-            recursiveFolderListing: ["folderPath"],
-            countFilesInFolder: ["folderPath"],
-            zipFolder: ["folderPath", "zipPath"],
+            appendToFile: ["filePath", "content"],
+            deleteFile: ["filePath"],
+            renameFile: ["filePath", "newFilePath"],
+            moveFile: ["filePath", "destinationPath"],
+            copyFile: ["filePath", "destinationPath"],
+            createDirectory: ["folderPath"],
+            listDirectory: ["folderPath"],
+            deleteDirectory: ["folderPath"],
+            recursiveFolderStats: ["folderPath"],
+            compressFolder: ["folderPath", "zipPath"],
             unzipFile: ["zipPath", "targetPath"],
-            fileHash: ["filePath"],
-            openFile: ["filePath"],
+            executeShellCommand: ["command"],
+            searchContent: ["folderPath", "searchTerm"],
         };
     
-        return functionArgsMap[functionName] || null;
+        return functionArgsMap[functionName] || [];
     }
 
     const handleEditArgsClick = () => {
@@ -81,23 +191,25 @@ function Box({ canvasOffset, addBox }) {
         setArgs((prevArgs) =>
             prevArgs.map((arg) => (arg.id === id ? { ...arg, value } : arg))
         );
+        updateBox(index, { args, selectedStep, returnType });
     };
 
     const handleStepChange = (e) => {
-        setSelectedStep(e.target.value); // Update selected step
+        setSelectedStep(e.target.value);
         const argumentNames = getFunctionArguments(e.target.value);
+        setReturnType(getFunctionReturnType(e.target.value));
         const formattedArgs = argumentNames.map((arg, index) => ({
             id: index + 1,
             value: arg,
         }));
         setArgs(formattedArgs);
+        updateBox(index, { args: formattedArgs, selectedStep: e.target.value, returnType: getFunctionReturnType(e.target.value) });
     };
 
-    // Calculate the position of the "+" button
-    const rectWidth = 300;   // Updated width
-    const rectHeight = 150;  // Updated height
+    const rectWidth = 300;
+    const rectHeight = 150;
     const rectX = (window.innerWidth - rectWidth) / 2 + canvasOffset.x;
-    const rectY = (window.innerHeight - rectHeight) / 2 + canvasOffset.y;
+    const rectY = (window.innerHeight - rectHeight) / 2 + canvasOffset.y + y;
 
     return (
         <div style={{ position: 'absolute', top: `${rectY}px`, left: `${rectX}px`, width: `${rectWidth}px`, height: `${rectHeight}px` }}>
@@ -136,7 +248,7 @@ function Box({ canvasOffset, addBox }) {
 
                 <button 
                     onClick={handleEditArgsClick}
-                    disabled={!selectedStep} // Disable button if no step is selected
+                    disabled={!selectedStep}
                     style={{
                         width: '80%',
                         padding: '8px',
@@ -144,9 +256,9 @@ function Box({ canvasOffset, addBox }) {
                         backgroundColor: '#007bff',
                         color: '#fff',
                         border: 'none',
-                        cursor: selectedStep ? 'pointer' : 'not-allowed', // Change cursor based on selection
+                        cursor: selectedStep ? 'pointer' : 'not-allowed',
                         boxSizing: 'border-box',
-                        opacity: selectedStep ? 1 : 0.5 // Change opacity based on selection
+                        opacity: selectedStep ? 1 : 0.5
                     }}
                 >
                     Edit Argument Parameters
@@ -176,9 +288,10 @@ function Box({ canvasOffset, addBox }) {
                     +
                 </button>
             )}
-            {isModalOpen && <Modal args={args} onArgChange={handleArgChange} onClose={handleCloseModal} />}
+            {isModalOpen && <Modal args={args} onArgChange={handleArgChange} onClose={handleCloseModal} boxes={boxes} currentBoxIndex={index} />}
         </div>
     );
 }
 
 export default Box;
+

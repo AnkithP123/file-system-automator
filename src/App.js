@@ -2,32 +2,17 @@ import React, { useState, useEffect } from "react";
 import { FaHome } from "react-icons/fa";
 import Box from "./components/box";
 import Line from "./components/line";
+import { BoxProvider, useBoxContext } from './components/BoxContext';
 
-function App() {
+function AppContent() {
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [canvasOffset, setCanvasOffset] = useState({ x: 0, y: 0 });
-    const [boxes, setBoxes] = useState([{ y: 0 }]);
-
-    useEffect(() => {
-        const handleWheel = (e) => {
-            e.preventDefault();
-        };
-
-        window.addEventListener("wheel", handleWheel, { passive: false });
-
-        return () => {
-            window.removeEventListener("wheel", handleWheel);
-        };
-    }, []);
-
-    const resetPosition = () => {
-        setCanvasOffset({ x: 0, y: 0 });
-    };
+    const { boxes, addBox } = useBoxContext();
 
     const handleMouseDown = (e) => {
         setIsDragging(true);
-        setDragStart({ x: e.clientX - canvasOffset.x, y: e.clientY - canvasOffset.y });
+        setDragStart({ x: e.clientX, y: e.clientY });
     };
 
     const handleMouseUp = () => {
@@ -35,23 +20,18 @@ function App() {
     };
 
     const handleMouseMove = (e) => {
-        if (isDragging) {
-            setCanvasOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
-        }
-    };
-
-    const addBox = () => {
-        setBoxes((prevBoxes) => {
-            const lastBox = prevBoxes[prevBoxes.length - 1];
-            const newBoxY = lastBox.y + 280; 
-            return [...prevBoxes, { y: newBoxY }];
+        if (!isDragging) return;
+        setCanvasOffset({
+            x: canvasOffset.x + (e.clientX - dragStart.x),
+            y: canvasOffset.y + (e.clientY - dragStart.y),
         });
+        setDragStart({ x: e.clientX, y: e.clientY });
     };
 
     return (
-        <div style={{ overflow: "hidden", backgroundColor: "#2c2c2c", width: "100vw", height: "100vh", overflow: "hidden" }}>
+        <div style={{ overflow: "hidden", backgroundColor: "#2c2c2c", width: "100vw", height: "100vh" }}>
             <button 
-                onClick={resetPosition} 
+                onClick={() => setCanvasOffset({ x: 0, y: 0 })}
                 style={{
                     position: "absolute",
                     top: "10px",
@@ -78,14 +58,36 @@ function App() {
                 }}
             >
                 {boxes.map((box, index) => (
-                    <><Box key={index} canvasOffset={{ x: canvasOffset.x, y: canvasOffset.y + box.y }} addBox={addBox} />
-                    { index !== 0 ? <Line x1={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y1={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y - 140)} x2={((window.innerWidth - 200) / 2 + canvasOffset.x) + 93} y2={(window.innerHeight - 100) / 2 + (canvasOffset.y + box.y) - 25} isCurved={true} />
-                     : <></>
-                    }</>
+                    <React.Fragment key={index}>
+                        <Box
+                            canvasOffset={canvasOffset}
+                            addBox={addBox}
+                            index={index}
+                            y={box.y}
+                        />
+                        {index !== 0 && (
+                            <Line
+                                x1={((window.innerWidth - 300) / 2 + canvasOffset.x) + 150}
+                                y1={(window.innerHeight - 150) / 2 + (canvasOffset.y + box.y - 140)}
+                                x2={((window.innerWidth - 300) / 2 + canvasOffset.x) + 150}
+                                y2={(window.innerHeight - 150) / 2 + (canvasOffset.y + box.y) - 25}
+                                isCurved={true}
+                            />
+                        )}
+                    </React.Fragment>
                 ))}
             </div>
         </div>
     );
 }
 
+function App() {
+    return (
+        <BoxProvider>
+            <AppContent />
+        </BoxProvider>
+    );
+}
+
 export default App;
+
