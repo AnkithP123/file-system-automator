@@ -127,7 +127,7 @@ function startFileReceiver() {
         }
     });
 
-    const port = 4141; // Port for the receiver server
+    const port = 4100; // Port for the receiver server
     server.listen(port, () => {
         console.log(`File receiver listening on http://${getLocalIp()}:${port}`);
     });

@@ -3,9 +3,10 @@ import { FaTrash, FaFolder, FaFileAlt, FaWifi, FaPlus, FaPaperPlane } from "reac
 
 function FileFlicker() {
     const [files, setFiles] = useState([]);
-    const [localIp, setLocalIp] = useState("192.168.1.xxx");
+    const [localIp, setLocalIp] = useState("");
     const [targetIp, setTargetIp] = useState("");
     const [discoveredDevices, setDiscoveredDevices] = useState([]);
+    const [receivedFiles, setReceivedFiles] = useState([]);
 
     useEffect(() => {
         // Fetch the local IP address
@@ -14,6 +15,11 @@ function FileFlicker() {
         // Discover devices on the network
         window.electron.discoverDevices().then((devices) => {
             setDiscoveredDevices(devices);
+        });
+
+        // Listen for received files
+        window.electron.onFileReceived((data) => {
+            setReceivedFiles((prev) => [...prev, data]);
         });
     }, []);
 
@@ -24,11 +30,10 @@ function FileFlicker() {
                 id: Math.random().toString(36).slice(2),
                 name: filePath.split("/").pop(),
                 path: filePath,
-                size: 0, // Optionally populate this if size info is needed
+                size: 0,
                 type: "file",
             };
             setFiles((prevFiles) => [...prevFiles, mockFile]);
-            console.log("Files added:", files);
         }
     };
 
@@ -39,7 +44,7 @@ function FileFlicker() {
                 id: Math.random().toString(36).slice(2),
                 name: folderPath.split("/").pop(),
                 path: folderPath,
-                size: 0, // Optionally populate this if size info is needed
+                size: 0,
                 type: "folder",
             };
             setFiles((prevFiles) => [...prevFiles, mockFolder]);
@@ -51,12 +56,11 @@ function FileFlicker() {
         const droppedFiles = Array.from(event.dataTransfer.files).map((file) => ({
             id: Math.random().toString(36).slice(2),
             name: file.name,
-            path: window.electron.getPathForFile(file), // Updated for Electron 32
+            path: window.electron.getPathForFile(file),
             size: file.size,
             type: file.type ? "file" : "folder",
         }));
         setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
-        console.log("Files dropped:", files);
     };
 
     const handleDragOver = (event) => {
@@ -192,6 +196,16 @@ function FileFlicker() {
                 ))}
             </div>
 
+            {/* Received Files */}
+            <div style={{ padding: "16px", borderTop: "1px solid #444" }}>
+                <h3 style={{ color: "#fff" }}>Received Files</h3>
+                {receivedFiles.map((file, index) => (
+                    <div key={index} style={{ color: "#fff", marginBottom: "8px" }}>
+                        {file.fileName} saved to {file.filePath}
+                    </div>
+                ))}
+            </div>
+
             {/* IP and Actions */}
             <div style={{ padding: "16px", borderTop: "1px solid #444" }}>
                 <div style={{ marginBottom: "16px" }}>
@@ -221,35 +235,6 @@ function FileFlicker() {
                         }}
                     />
                 </div>
-
-                {/* Discovered Devices */}
-                {discoveredDevices.length > 0 && (
-                    <div style={{ marginBottom: "16px" }}>
-                        <hr style={{ borderColor: "#555" }} />
-                        <p style={{ fontSize: "12px", color: "#aaa" }}>Discovered devices:</p>
-                        {discoveredDevices.map((device) => (
-                            <button
-                                key={device.ip}
-                                onClick={() => setTargetIp(device.ip)}
-                                style={{
-                                    display: "block",
-                                    width: "100%",
-                                    textAlign: "left",
-                                    padding: "8px",
-                                    marginBottom: "8px",
-                                    background: "#555",
-                                    color: "#fff",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                <FaWifi style={{ marginRight: "8px" }} />
-                                {device.name} ({device.ip})
-                            </button>
-                        ))}
-                    </div>
-                )}
 
                 {/* Flick Files Button */}
                 <button
