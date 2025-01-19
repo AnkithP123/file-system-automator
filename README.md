@@ -1,6 +1,6 @@
 # Flicker: File Manager
 
-Flicker is a file management application that allows users to manage files and folders, discover devices on the network, and send files to other devices. The application is built using Electron and React, and it leverages Google Generative AI for executing file system tasks based on user prompts.
+Flicker is a file management application that allows users to manage files and folders, discover devices on the network, and send files to other devices. The application is built using Electron and React, and it leverages Google Generative AI for executing file system tasks based on user prompts. The app accomplishes social good by helping people, especially developers that work in groups or students, with easily managing and sharing their files.
 
 ## Table of Contents
 
