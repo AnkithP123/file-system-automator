@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { FaTrash, FaFolder, FaFileAlt, FaWifi, FaPlus, FaPaperPlane } from "react-icons/fa";
 import './FileFlicker.css';
 
+const API_URL = 'http://localhost:3636';
+
 function FileFlicker() {
     const [files, setFiles] = useState([]);
     const [localIp, setLocalIp] = useState("");
@@ -10,6 +12,7 @@ function FileFlicker() {
     const [receivedFiles, setReceivedFiles] = useState([]);
     const [isFlicking, setIsFlicking] = useState(false);
     const [isReceiving, setIsReceiving] = useState(false);
+    const [deviceName, setDeviceName] = useState(`Device-${Math.random().toString(36).slice(2, 7)}`);
 
     useEffect(() => {
         // Fetch the local IP address
@@ -31,76 +34,87 @@ function FileFlicker() {
                 return [...prev, data];
             });
         });
-
-        // Listen for file pool updates
-        window.electron.onFilePoolUpdated((newFiles) => {
-            console.log("New files:", newFiles);
-            setFiles((prevFiles) => {
-                const droppedFiles = Array.from(event.dataTransfer.files).map((file) => ({
-                    id: Math.random().toString(36).slice(2),
-                    name: file.split("/").pop(),
-                    path: file,
-                    size: 0,
-                    type: "file"
-                }));
-                const newFiles = droppedFiles.filter(file => !files.some(existingFile => existingFile.path === file.path));
-                if (newFiles.length < droppedFiles.length) {
-                    alert("Some files/folders already exist in the list.");
-                }
-                setFiles((prevFiles) => [...prevFiles, ...newFiles]);
-        
-                return [...prevFiles, ...files];
-            });
-        });
     }, []);
 
+    // Check for available devices periodically
     useEffect(() => {
         const fetchDevices = async () => {
-            const devices = await window.electron.discoverDevices();
-            setDiscoveredDevices(devices);
+            try {
+                const response = await fetch(`${API_URL}/devices`);
+                const devices = await response.json();
+                setDiscoveredDevices(devices.filter(device => device.ip !== localIp));
+            } catch (error) {
+                console.error('Failed to fetch devices:', error);
+            }
         };
 
-        const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
+        fetchDevices();
+        const interval = setInterval(fetchDevices, 5000);
+        return () => clearInterval(interval);
+    }, [localIp]);
 
-        return () => clearInterval(interval); // Cleanup on unmount
-    }, []);
+    const checkForFiles = async () => {
+        try {
+            const response = await fetch(`${API_URL}/receive`, {
+                method: 'POST'
+            });
+            const data = await response.json();
 
-    const addFile = async () => {
-        const filePath = await window.electron.selectFile();
-        if (filePath) {
-            const fileName = filePath.split("/").pop();
-            if (files.some(file => file.path === filePath)) {
-                alert("File already exists in the list.");
-                return;
+            if (data.hasFiles) {
+                setIsReceiving(true);
+                for (const file of data.files) {
+                    try {
+                        const downloadResponse = await fetch(`${API_URL}/download/${file.filename}`);
+                        const blob = await downloadResponse.blob();
+                        
+                        // Create download link
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.originalName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+
+                        setReceivedFiles(prev => [...prev, {
+                            fileName: file.originalName,
+                            filePath: 'Downloads folder',
+                            sender: file.senderIp
+                        }]);
+                    } catch (error) {
+                        console.error('Failed to download file:', error);
+                    }
+                }
+                setTimeout(() => setIsReceiving(false), 1500);
             }
-            const mockFile = {
-                id: Math.random().toString(36).slice(2),
-                name: fileName,
-                path: filePath,
-                size: 0,
-                type: "file",
-            };
-            setFiles((prevFiles) => [...prevFiles, mockFile]);
+        } catch (error) {
+            console.error('Failed to check for files:', error);
         }
     };
 
-    const addFolder = async () => {
-        const folderPath = await window.electron.selectFolder();
-        if (folderPath) {
-            const folderName = folderPath.split("/").pop();
-            if (files.some(file => file.path === folderPath)) {
-                alert("Folder already exists in the list.");
-                return;
+    const addFile = async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const mockFile = {
+                    id: Math.random().toString(36).slice(2),
+                    name: file.name,
+                    path: file.name,
+                    size: file.size,
+                    type: "file",
+                    file: file // Store the actual file object
+                };
+                setFiles(prevFiles => [...prevFiles, mockFile]);
             }
-            const mockFolder = {
-                id: Math.random().toString(36).slice(2),
-                name: folderName,
-                path: folderPath,
-                size: 0,
-                type: "folder",
-            };
-            setFiles((prevFiles) => [...prevFiles, mockFolder]);
-        }
+        };
+        input.click();
+    };
+
+    const addFolder = () => {
+        alert("Folder upload is not supported in this version");
     };
 
     const handleDrop = (event) => {
@@ -108,15 +122,12 @@ function FileFlicker() {
         const droppedFiles = Array.from(event.dataTransfer.files).map((file) => ({
             id: Math.random().toString(36).slice(2),
             name: file.name,
-            path: window.electron.getPathForFile(file),
+            path: file.name,
             size: file.size,
-            type: file.type ? "file" : "folder",
+            type: "file",
+            file: file
         }));
-        const newFiles = droppedFiles.filter(file => !files.some(existingFile => existingFile.path === file.path));
-        if (newFiles.length < droppedFiles.length) {
-            alert("Some files/folders already exist in the list.");
-        }
-        setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+        setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
     };
 
     const handleDragOver = (event) => {
@@ -132,11 +143,30 @@ function FileFlicker() {
     };
 
     const handleFlick = async () => {
-        setIsFlicking(true);
-        setTimeout(() => setIsFlicking(false), 1500); // Reset animation after 1.5 seconds
+        if (!targetIp || files.length === 0) return;
 
-        const response = await window.electron.sendFileToIp(targetIp, files);
-        console.log("Flick result:", response);
+        setIsFlicking(true);
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('files', file.file);
+        });
+        formData.append('targetIp', targetIp);
+
+        try {
+            const response = await fetch(`${API_URL}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.message) {
+                setFiles([]); // Clear files after successful upload
+            }
+        } catch (error) {
+            console.error('Failed to send files:', error);
+            alert('Failed to send files. Please try again.');
+        }
+
+        setTimeout(() => setIsFlicking(false), 1500);
     };
 
     return (
@@ -242,7 +272,7 @@ function FileFlicker() {
                     >
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
                             {file.type === "folder" ? <FaFolder /> : <FaFileAlt />}
-                            <span style={{ wordWrap: "break-word", overflowWrap: "anywhere" }}>{file.path}</span>
+                            <span style={{ wordWrap: "break-word", overflowWrap: "anywhere" }}>{file.name}</span>
                         </div>
                         <button
                             onClick={() => removeFile(file.id)}
@@ -260,10 +290,10 @@ function FileFlicker() {
             </div>
 
             {/* Received Files */}
-            <div style={{ padding: "16px", borderTop: "1px solid #444", overflowY: "auto", maxHeight: "150px", minHeight: "100px", animation: isReceiving ? "glow 1.5s infinite" : "none",}}>
+            <div style={{ padding: "16px", borderTop: "1px solid #444", overflowY: "auto", maxHeight: "150px", minHeight: "100px", animation: isReceiving ? "glow 1.5s infinite" : "none" }}>
                 {receivedFiles.map((file, index) => (
                     <div key={index} style={{ color: "#fff", marginBottom: "8px" }}>
-                        Receiving {file.fileName}. Saving to {file.filePath}
+                        Receiving {file.fileName} from {file.sender}
                     </div>
                 ))}
             </div>
