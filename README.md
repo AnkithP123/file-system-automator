@@ -11,7 +11,7 @@ Flicker is a file management application that allows users to manage files and f
 - [Scripts](#scripts)
 - [License](#license)
 
-## Installation
+## Manual Installation
 
 1. Clone the repository:
     ```sh
@@ -29,6 +29,25 @@ Flicker is a file management application that allows users to manage files and f
     npm run electron
     ```
 
+4. Alternatively, for a much more smoother experience, build the app:
+    ```sh
+    npm run build
+    npm run extra
+    ```
+    The file for your OS should appear in the dist folder!
+
+## Mac App Download (much preferred, shows local devices and features are more likely to work)
+
+1. Download [this dmg](https://drive.google.com/file/d/1JxvUd2ATbLJdom_eDISwdllNR8ngAcwC/view?usp=sharing)
+   
+2. If it fails to open because it is 'damaged', open System Settings.
+   
+    2a. Then navigate to Privacy & Security and scroll down
+
+    2b. Select Allow applications from 'anywhere', and then reopen the app (you can change this back after running the app and Flicker will still run)
+
+3. It should work!
+
 ## Usage
 
 - **File Management**: Add files and folders to the pool, remove them, and clear the pool.
@@ -43,4 +62,4 @@ Flicker is a file management application that allows users to manage files and f
 - **Network Operations**: Discover devices on the network and send files to them.
 - **AI Integration**: Use Google Generative AI to execute file system tasks based on user prompts.
 
-[**Link to demos**:](https://drive.google.com/drive/folders/1pGLANu5vxsMfnXsfGwX87dbu-lYh45-w?usp=drive_link)
+[**Link to demos**](https://drive.google.com/drive/folders/1pGLANu5vxsMfnXsfGwX87dbu-lYh45-w?usp=drive_link)
