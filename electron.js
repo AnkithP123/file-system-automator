@@ -51,7 +51,7 @@ function startDeviceDiscovery() {
         try {
             const data = JSON.parse(msg.toString());
             if (data.name === "FileFlicker") {
-                devices.set(data.ip, { name: data.name, ip: data.ip, timestamp: Date.now() });
+                devices.set(data.ip, { name: data.ip === getLocalIp() ? 'Me' : data.name, ip: data.ip, timestamp: Date.now() });
             }
         } catch (error) {
             console.error("Error parsing UDP message:", error);
@@ -388,12 +388,16 @@ ipcMain.handle("execute-command", async (event, command) => {
         console.log("Command:", cmd);
         console.log("Arguments:", args);
         if (cmd === "file_pool") {
-            let filePattern = command.split(" ")[1];
+            let filePattern = command.split(" ").slice(1).join(" ");
 
             // automatically expand user's home directory
             if (filePattern.startsWith("~")) {
                 filePattern = path.join(os.homedir(), filePattern.slice(1));
             }
+
+            filePattern = filePattern.replace(/\\/g, '');
+
+            console.log("File pattern:", filePattern);
 
             const files = glob.sync(filePattern);
             
@@ -415,10 +419,10 @@ ipcMain.handle("execute-command", async (event, command) => {
                     
             
             console.log('Files: ', files);            
-            mainWindow.webContents.send("file-added", {pool});
+            mainWindow.webContents.send("file-added", { pool });
 
             console.log("Files added to pool:", filePool);
-            return createResponse(true, { output: "Files added to pool successfully!" }, "Files added to pool successfully!");
+            return createResponse(true, { output: 'Files found: ' + pool.map((file) => file.name).join(", ") }, "Files added to pool successfully!");
         } else if (cmd === "flick") {
             const targetIp = args[0];
             mainWindow.webContents.send("flick", { targetIp });

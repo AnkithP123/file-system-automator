@@ -1,159 +1,162 @@
 .ai-container {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+  max-width: 800px;
+  margin: 1rem auto;
+  padding: 0 1rem;
+  background-color: #1e1e1e;
+  color: #f5f5f5;
+}
+
+.ai-card {
+  background: #2c2c2c;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.ai-card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #444;
+}
+
+.ai-card-header h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  color: #f5f5f5;
+}
+
+.ai-card-header p {
+  margin: 0.5rem 0 0;
+  color: #aaa;
+}
+
+.ai-card-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.textarea-container textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background-color: #333;
+  color: #f5f5f5;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.textarea-container textarea:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.alert-error {
+  background-color: #b91c1c;
+  border: 1px solid #991b1b;
+  color: #f5f5f5;
+}
+
+.alert h4 {
+  margin: 0 0 0.5rem;
+}
+
+.alert p {
+  margin: 0;
+}
+
+.progress-container {
+  border: 1px solid #444;
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 1rem;
+  background-color: #2c2c2c;
+}
+
+.progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.progress-item.success .badge {
+  background-color: #16a34a;
+  color: white;
+}
+
+.progress-item.error .badge {
+  background-color: #b91c1c;
+  color: white;
+}
+
+.ai-card-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #444;
+}
+
+.submit-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #008cba;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #008cba;
+}
+
+.submit-button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
-  
-  .ai-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-  
-  .ai-card-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .ai-card-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: #333;
-  }
-  
-  .ai-card-header p {
-    margin: 0.5rem 0 0;
-    color: #666;
-  }
-  
-  .ai-card-content {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .textarea-container textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    resize: vertical;
-    font-family: inherit;
-  }
-  
-  .textarea-container textarea:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
-  }
-  
-  .alert {
-    padding: 1rem;
-    border-radius: 4px;
-    margin-top: 1rem;
-  }
-  
-  .alert-error {
-    background-color: #fee2e2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-  }
-  
-  .alert h4 {
-    margin: 0 0 0.5rem;
-  }
-  
-  .alert p {
-    margin: 0;
-  }
-  
-  .progress-container {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 1rem;
-  }
-  
-  .progress-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .progress-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-  }
-  
-  .badge {
-    padding: 0.25rem 0.5rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-  
-  .progress-item.success .badge {
-    background-color: #22c55e;
-    color: white;
-  }
-  
-  .progress-item.error .badge {
-    background-color: #dc2626;
-    color: white;
-  }
-  
-  .ai-card-footer {
-    padding: 1.5rem;
-    border-top: 1px solid #eee;
-  }
-  
-  .submit-button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background-color: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .submit-button:hover:not(:disabled) {
-    background-color: #1d4ed8;
-  }
-  
-  .submit-button:disabled {
-    background-color: #93c5fd;
-    cursor: not-allowed;
-  }
-  
-  .loading-spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #ffffff;
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  
-  .send-icon {
-    font-size: 1rem;
-  }
-  
-  
+}
+
+.send-icon {
+  font-size: 1rem;
+}

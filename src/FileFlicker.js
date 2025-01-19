@@ -293,7 +293,7 @@ function FileFlicker() {
                         value={targetIp}
                         onChange={(e) => setTargetIp(e.target.value)}
                         style={{
-                            width: "100%",
+                            width: "93%",
                             padding: "8px",
                             borderRadius: "4px",
                             border: "1px solid #555",

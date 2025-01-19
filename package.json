@@ -1,5 +1,5 @@
 {
-  "name": "file-system-automator",
+  "name": "flicker-file-management",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -50,8 +50,8 @@
   "dist": "electron-builder",
   "main": "electron.js",
   "build": {
-    "appId": "ankith.and.nikunj.fileautomator",
-    "productName": "File Automator",
+    "appId": "ankith.and.nikunj.flicker",
+    "productName": "Flicker",
     "directories": {
       "output": "dist"
     },
