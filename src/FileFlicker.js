@@ -23,6 +23,18 @@ function FileFlicker() {
         });
     }, []);
 
+    useEffect(() => {
+        const fetchDevices = async () => {
+            const devices = await window.electron.discoverDevices();
+            setDiscoveredDevices(devices);
+        };
+
+        const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
+
+        return () => clearInterval(interval); // Cleanup on unmount
+    }, []);
+
+
     const addFile = async () => {
         const filePath = await window.electron.selectFile();
         if (filePath) {
@@ -235,6 +247,36 @@ function FileFlicker() {
                         }}
                     />
                 </div>
+
+                {discoveredDevices.length > 0 && (
+                    <div style={{ marginBottom: "16px" }}>
+                        <hr style={{ borderColor: "#555" }} />
+                        <p style={{ fontSize: "12px", color: "#aaa" }}>Discovered devices:</p>
+                        {discoveredDevices.map((device) => (
+                            <button
+                                key={device.ip}
+                                onClick={() => setTargetIp(device.ip)}
+                                style={{
+                                    display: "block",
+                                    width: "100%",
+                                    textAlign: "left",
+                                    padding: "8px",
+                                    marginBottom: "8px",
+                                    background: "#555",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <FaWifi style={{ marginRight: "8px" }} />
+                                {device.name} ({device.ip})
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+
 
                 {/* Flick Files Button */}
                 <button

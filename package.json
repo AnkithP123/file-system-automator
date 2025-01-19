@@ -9,6 +9,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "archiver": "^7.0.1",
+    "archiver-utils": "^5.0.2",
     "http-server": "^14.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -48,10 +49,26 @@
   "dist": "electron-builder",
   "main": "electron.js",
   "build": {
-    "appId": "com.example.myapp",
-    "productName": "My Electron App",
+    "appId": "ankith.and.nikunj.fileautomator",
+    "productName": "File Automator",
     "directories": {
       "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "electron.js",
+      "preload.js",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron.js"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
     }
   },
   "devDependencies": {

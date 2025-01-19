@@ -6,6 +6,7 @@ const unzipper = require("unzipper");
 const { exec } = require("child_process");
 const http = require("http");
 const os = require("os");
+const dgram = require("dgram");
 
 let mainWindow;
 
@@ -22,7 +23,52 @@ app.on("ready", () => {
     mainWindow.loadURL("http://localhost:3000");
 
     startFileReceiver();
+
+    startDeviceDiscovery();
 });
+
+
+const BROADCAST_PORT = 41234;
+const UDP_BROADCAST_INTERVAL = 3000; // Broadcast every 3 seconds
+const devices = new Map(); // Store discovered devices (IP -> { name, timestamp })
+
+function startDeviceDiscovery() {
+    const udpSocket = dgram.createSocket("udp4");
+
+    udpSocket.bind(BROADCAST_PORT, () => {
+        udpSocket.setBroadcast(true);
+    });
+
+    // Send broadcast
+    setInterval(() => {
+        const message = Buffer.from(JSON.stringify({ name: "FileFlicker", ip: getLocalIp() }));
+        udpSocket.send(message, 0, message.length, BROADCAST_PORT, "255.255.255.255");
+    }, UDP_BROADCAST_INTERVAL);
+
+    // Listen for broadcast messages
+    udpSocket.on("message", (msg, rinfo) => {
+        try {
+            console.log("Received UDP message:", msg.toString());
+            const data = JSON.parse(msg.toString());
+            if (data.name === "FileFlicker") {
+                devices.set(data.ip, { name: data.name, ip: data.ip, timestamp: Date.now() });
+            }
+        } catch (error) {
+            console.error("Error parsing UDP message:", error);
+        }
+    });
+
+    // Clean up stale devices
+    setInterval(() => {
+        const now = Date.now();
+        devices.forEach((device, ip) => {
+            if (now - device.timestamp > 10 * 1000) {
+                devices.delete(ip);
+            }
+        });
+    }, 5000);
+}
+
 
 // Utility function for responses
 function createResponse(success, data = {}, message = "") {
@@ -148,11 +194,10 @@ function getLocalIp() {
 
 // Simulate device discovery on the network
 ipcMain.handle("network:discover", async () => {
-    return [
-        { name: "Living Room PC", ip: "192.168.1.101" },
-        { name: "Kitchen Tablet", ip: "192.168.1.102" },
-    ]; // Replace with actual network discovery logic
+    console.log("Devices discovered:", devices);
+    return Array.from(devices.values());
 });
+
 
 
 // --- File Operations ---
