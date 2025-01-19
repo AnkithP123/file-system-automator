@@ -29,6 +29,7 @@ app.on("ready", () => {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
         },
+        icon: path.join(__dirname, 'icons/logo.png')
     });
 
     mainWindow.loadURL("http://localhost:3001");
