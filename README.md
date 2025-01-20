@@ -15,8 +15,8 @@ Flicker is a file management application that allows users to manage files and f
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/flicker-file-management.git
-    cd flicker-file-management
+    git clone https://github.com/AnkithP123/file-system-automator.git
+    cd file-system-automator
     ```
 
 2. Install dependencies:
@@ -36,17 +36,36 @@ Flicker is a file management application that allows users to manage files and f
     ```
     The file for your OS should appear in the dist folder!
 
-## Mac App Download (much preferred, shows local devices and features are more likely to work)
+## Mac App Download (much preferred for macs, shows local devices and features are more likely to work)
 
 1. Download [this dmg](https://drive.google.com/file/d/1JxvUd2ATbLJdom_eDISwdllNR8ngAcwC/view?usp=sharing)
    
-2. If it fails to open because it is 'damaged', open System Settings.
-   
-    2a. Then navigate to Privacy & Security and scroll down
+2. If it fails to open because it is 'damaged', close the app and do the following:
 
-    2b. Select Allow applications from 'anywhere', and then reopen the app (you can change this back after running the app and Flicker will still run)
+    2a. Open Terminal and run the following command:
+           ```sh
+           sudo spctl --master-disable
+           ```
+        It should make you enter your password to disable the gatekeeper, and then confirm it in System Settings, which you should then open
+   
+    2b. Then navigate to Privacy & Security and scroll down
+
+    2c. Select Allow applications from 'Anywhere', and then reopen the app (you can change this back after running the app and Flicker will still run)
+
+4. It should work!
+
+## Windows App Download (much preferred for PCs, shows local devices and features are more likely to work)
+
+1. Download [this exe](https://drive.google.com/file/d/1Lue0MxkHTmtgHvYglxbnNtO__IYkX59z/view?usp=drive_link)
+   
+2. Windows defender will probably block the file because we don't have a developer license
+   
+    2a. Click more info and say Run Anyway
+
+    2b. When it prompts you to give it network access, allow it (if you want to use file flicking features).
 
 3. It should work!
+
 
 ## Usage
 
