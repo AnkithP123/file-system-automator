@@ -8,6 +8,38 @@ const http = require("http");
 const os = require("os");
 const dgram = require("dgram");
 const glob = require("glob");
+const { spawn } = require("child_process");
+let receiverProcess;
+
+function startFileReceiverInBackground() {
+    const receiverScriptPath = path.join(__dirname, "file-receiver.js");
+    const downloadPath = app.getPath("downloads");
+    receiverProcess = spawn("node", [receiverScriptPath, downloadPath], {
+        detached: true, // Allow it to run independently
+        stdio: ["pipe", "pipe", "pipe", "ipc"] // Enable IPC communication
+    });
+
+    receiverProcess.on("message", (message) => {
+        console.log(message.command);
+        if (message.command === 'file-received' && mainWindow && mainWindow.webContents) {
+            console.log("File received in the background:", message);
+            mainWindow.webContents.send("file-received", message);
+        } else if (message.command === 'set-device') {
+            console.log("Device discovered in the background:", message);
+            devices.set(message.ip, message);
+            const now = Date.now();
+            devices.forEach((device, ip) => {
+                if (now - device.timestamp > 10 * 1000) {
+                    devices.delete(ip);
+                }
+            });
+        }
+    });
+
+    receiverProcess.unref(); // Ensure it doesn't terminate with Electron
+    console.log("File receiver started in the background");
+}
+
 
 let mainWindow;
 
@@ -22,6 +54,9 @@ function startHttpServer() {
 
 
 app.on("ready", () => {
+
+    startFileReceiverInBackground();
+    
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -34,9 +69,9 @@ app.on("ready", () => {
 
     mainWindow.loadURL("http://localhost:3001");
 
-    startFileReceiver();
+    // startFileReceiver();
 
-    startDeviceDiscovery();
+    // startDeviceDiscovery();
 
     startHttpServer();
 });
@@ -53,24 +88,18 @@ function startDeviceDiscovery() {
         udpSocket.setBroadcast(true);
     });
 
-    // Send broadcast
-    setInterval(() => {
-        const message = Buffer.from(JSON.stringify({ name: "FileFlicker", ip: getLocalIp() }));
-        udpSocket.send(message, 0, message.length, BROADCAST_PORT, "255.255.255.255");
-    }, UDP_BROADCAST_INTERVAL);
-
-    // Listen for broadcast messages
     udpSocket.on("message", (msg, rinfo) => {
         console.log(`Received UDP message from ${rinfo.address}:${rinfo.port}`);
         try {
             const data = JSON.parse(msg.toString());
             if (data.name === "FileFlicker") {
-                devices.set(data.ip, { name: data.ip === getLocalIp() ? 'Me' : data.name, ip: data.ip, timestamp: Date.now() });
+                devices.set(data.ip, { name: data.ip === getLocalIp() ? "Me" : data.name, ip: data.ip, timestamp: Date.now() });
             }
         } catch (error) {
             console.error("Error parsing UDP message:", error);
         }
     });
+
 
     // Clean up stale devices
     setInterval(() => {
