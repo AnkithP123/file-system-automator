@@ -49,10 +49,10 @@ Flicker is a file management application that allows users to manage files and f
     If that fails, do the rest:
 
     2a. Open Terminal and run the following command:
-           ```
-           sudo spctl --master-disable
-           ```
-        It should make you enter your password to disable the gatekeeper, and then confirm it in System Settings, which you should then open
+    ```sh
+    sudo spctl --master-disable
+    ```
+    It should make you enter your password to disable the gatekeeper, and then confirm it in System Settings, which you should then open
    
     2b. Then navigate to Privacy & Security and scroll down
 
