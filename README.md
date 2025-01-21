@@ -43,7 +43,7 @@ Flicker is a file management application that allows users to manage files and f
 2. If it fails to open because it is 'damaged', close the app and do the following:
 
     2a. Open Terminal and run the following command:
-           ```sh
+           ```
            sudo spctl --master-disable
            ```
         It should make you enter your password to disable the gatekeeper, and then confirm it in System Settings, which you should then open
