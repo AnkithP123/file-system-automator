@@ -38,7 +38,7 @@ Flicker is a file management application that allows users to manage files and f
 
 ## Mac App Download (much preferred for macs, shows local devices and features are more likely to work)
 
-1. Download [this dmg](https://drive.google.com/file/d/1JxvUd2ATbLJdom_eDISwdllNR8ngAcwC/view?usp=sharing)
+1. Download [this dmg](https://drive.google.com/file/d/1YkThR2hXMh50Q58oUaLMMmH9bYcg6GxR/view?usp=sharing)
    
 2. If it fails to open because it is 'damaged', close the app and do the following:
 
@@ -56,7 +56,7 @@ Flicker is a file management application that allows users to manage files and f
 
 ## Windows App Download (much preferred for PCs, shows local devices and features are more likely to work)
 
-1. Download [this exe](https://drive.google.com/file/d/1Lue0MxkHTmtgHvYglxbnNtO__IYkX59z/view?usp=drive_link)
+1. Download [this exe](https://drive.google.com/file/d/1lP2yjRPWmbfnJ8MOUG823pIPEaDdOHGv/view?usp=sharing)
    
 2. Windows defender will probably block the file because we don't have a developer license
    
