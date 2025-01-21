@@ -48,7 +48,7 @@ Flicker is a file management application that allows users to manage files and f
     ```
     If that fails, do the rest:
 
-    2a. Open Terminal and run the following command:
+    2a (if other 2a fails). Open Terminal and run the following command:
     ```sh
     sudo spctl --master-disable
     ```
