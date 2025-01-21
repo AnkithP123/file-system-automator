@@ -38,7 +38,7 @@ Flicker is a file management application that allows users to manage files and f
 
 ## Mac App Download (much preferred for macs, shows local devices and features are more likely to work)
 
-1. Download [this dmg](https://drive.google.com/file/d/1YkThR2hXMh50Q58oUaLMMmH9bYcg6GxR/view?usp=sharing) on arm64 machines, and [this dmg](https://drive.google.com/file/d/1nTS7-1ICABN7xu5Ysv2c9UKqBV6WfLg1/view?usp=sharing) otherwise
+1. Download [this dmg](https://drive.google.com/file/d/1nTS7-1ICABN7xu5Ysv2c9UKqBV6WfLg1/view?usp=sharing), or if you're on arm64, [this dmg](https://drive.google.com/file/d/1YkThR2hXMh50Q58oUaLMMmH9bYcg6GxR/view?usp=sharing)
    
 2. If it fails to open because it is 'damaged', close the app and do the following:
 
