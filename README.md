@@ -38,15 +38,21 @@ Flicker is a file management application that allows users to manage files and f
 
 ## Mac App Download (much preferred for macs, shows local devices and features are more likely to work)
 
-1. Download [this dmg](https://drive.google.com/file/d/1JxvUd2ATbLJdom_eDISwdllNR8ngAcwC/view?usp=sharing)
+1. Download [this dmg](https://drive.google.com/file/d/1nTS7-1ICABN7xu5Ysv2c9UKqBV6WfLg1/view?usp=sharing), or if you're on arm64, [this dmg](https://drive.google.com/file/d/1iiMuF-NdJn_qu0mXE8NmKvgr7VHgRHSN/view?usp=sharing). Run it and drag the file into Applications.
    
 2. If it fails to open because it is 'damaged', close the app and do the following:
 
-    2a. Open Terminal and run the following command:
-           ```sh
-           sudo spctl --master-disable
-           ```
-        It should make you enter your password to disable the gatekeeper, and then confirm it in System Settings, which you should then open
+    2a. Open terminal and run the following command
+    ```sh
+    xattr -c /Applications/Flicker.app
+    ```
+    If that fails, do the rest:
+
+    2a (if other 2a fails). Open Terminal and run the following command:
+    ```sh
+    sudo spctl --master-disable
+    ```
+    It should make you enter your password to disable the gatekeeper, and then confirm it in System Settings, which you should then open
    
     2b. Then navigate to Privacy & Security and scroll down
 
@@ -56,7 +62,7 @@ Flicker is a file management application that allows users to manage files and f
 
 ## Windows App Download (much preferred for PCs, shows local devices and features are more likely to work)
 
-1. Download [this exe](https://drive.google.com/file/d/1Lue0MxkHTmtgHvYglxbnNtO__IYkX59z/view?usp=drive_link)
+1. Download [this exe](https://drive.google.com/file/d/1lP2yjRPWmbfnJ8MOUG823pIPEaDdOHGv/view?usp=sharing)
    
 2. Windows defender will probably block the file because we don't have a developer license
    
