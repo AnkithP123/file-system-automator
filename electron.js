@@ -21,7 +21,7 @@ function startFileReceiverInBackground() {
     const logFile = path.join(logPath, 'receiver.log');
     const downloadPath = app.getPath("downloads");
     console.log('Resources:', resourcesPath);
-    const receiverScriptPath = path.join(".", "file-receiver.js");
+    const receiverScriptPath = path.join(resourcesPath, "file-receiver.js");
 
     console.log('HI:', receiverScriptPath);
 
