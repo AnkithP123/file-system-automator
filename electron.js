@@ -21,12 +21,12 @@ function startFileReceiverInBackground() {
     const logFile = path.join(logPath, 'receiver.log');
     const downloadPath = app.getPath("downloads");
     console.log('Resources:', resourcesPath);
-    const receiverScriptPath = path.join(resourcesPath, "file-receiver.js");
+    const receiverScriptPath = path.join(resourcesPath, "file-receiver.mjs");
 
     console.log('HI:', receiverScriptPath);
 
     // Kill any existing child processes running file-receiver.js
-    exec(`pkill -f file-receiver.js`, (error, stdout, stderr) => {
+    exec(`pkill -f file-receiver.mjs`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error killing existing processes: ${error.message}`);
         } else {
@@ -36,8 +36,8 @@ function startFileReceiverInBackground() {
         // Fork the receiver script
         receiverProcess = fork(receiverScriptPath, [downloadPath, resourcesPath], {
             detached: true, // Allow it to run independently
-            // stdio: ["ignore", fs.openSync(logFile, 'a'), fs.openSync(logFile, 'a'), "ipc"], // IPC and logging
-            stdio: ["inherit", "inherit", "inherit", "ipc"], // IPC only
+            stdio: ["ignore", fs.openSync(logFile, 'a'), fs.openSync(logFile, 'a'), "ipc"], // IPC and logging
+            // stdio: ["inherit", "inherit", "inherit", "ipc"], // IPC only
             env: { ELECTRON_RUN_AS_NODE: "1" }, // Run as a Node.js script
         });
 
@@ -71,7 +71,6 @@ let mainWindow;
 
 const httpServer = require('http-server');
 const { resourcesPath, env } = require("process");
-const { not } = require("ajv/dist/compile/codegen");
 
 function startHttpServer() {
     const server = httpServer.createServer({ root: path.join(__dirname, 'build') });

@@ -1,10 +1,11 @@
-const http = require("http");
-const fs = require("fs");
-const path = require("path");
-const os = require("os");
-const dgram = require("dgram");
-const cp = require("child_process");
-// const notifier = require("node-notifier");
+import http from "http";
+import fs from "fs";
+import path from "path";
+import os from "os";
+import dgram from "dgram";
+import cp from "child_process";
+// import clipboardy from "clipboardy";
+import notifier from "node-notifier";
 
 // Get the downloadsPath from command line arguments
 const downloadPath = process.argv[2];
@@ -76,16 +77,12 @@ const server = http.createServer((req, res) => {
                 case "darwin":
                     console.log("Sending notification...");
                     try {
-                        const previousClipboard = cp.execSync("pbpaste").toString();
-                        console.log("Previous clipboard:", previousClipboard);
-                        console.log("holi:", cp.execSync(`echo "${fileName}" | pbcopy`).toString());
                         cp.exec(`xattr -c ${path.join(resourcesPath, "FlickerNotifier.app")} && open ${path.join(resourcesPath, "FlickerNotifier.app")}`, (error, stdout, stderr) => {
                             if (error) {
                                 console.error("Notification error:", error);
                             } else {
                                 console.log("Notification sent:", stdout);
                             }
-                            cp.execSync(`echo "${previousClipboard}" | pbcopy`);
                         });
                     } catch (error) {
                         console.error("Clipboard error:", error);

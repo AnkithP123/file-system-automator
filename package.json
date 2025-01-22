@@ -72,8 +72,8 @@
     ],
     "extraFiles": [
       {
-        "from": "file-receiver.js",
-        "to": "resources/file-receiver.js"
+        "from": "file-receiver.mjs",
+        "to": "resources/file-receiver.mjs"
       },
       {
         "from": "icons/logo.png",
