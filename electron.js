@@ -8,42 +8,70 @@ const http = require("http");
 const os = require("os");
 const dgram = require("dgram");
 const glob = require("glob");
-const { spawn } = require("child_process");
+const { fork } = require("child_process");
+
+
 let receiverProcess;
 
 function startFileReceiverInBackground() {
-    const receiverScriptPath = path.join(__dirname, "file-receiver.js");
+    const logPath = path.join(app.getPath("userData"), 'logs');
+    if (!fs.existsSync(logPath)) {
+        fs.mkdirSync(logPath, { recursive: true });
+    }
+    const logFile = path.join(logPath, 'receiver.log');
     const downloadPath = app.getPath("downloads");
-    receiverProcess = spawn("node", [receiverScriptPath, downloadPath], {
-        detached: true, // Allow it to run independently
-        stdio: ["pipe", "pipe", "pipe", "ipc"] // Enable IPC communication
-    });
+    console.log('Resources:', resourcesPath);
+    const receiverScriptPath = path.join(".", "file-receiver.js");
 
-    receiverProcess.on("message", (message) => {
-        console.log(message.command);
-        if (message.command === 'file-received' && mainWindow && mainWindow.webContents) {
-            console.log("File received in the background:", message);
-            mainWindow.webContents.send("file-received", message);
-        } else if (message.command === 'set-device') {
-            console.log("Device discovered in the background:", message);
-            devices.set(message.ip, message);
-            const now = Date.now();
-            devices.forEach((device, ip) => {
-                if (now - device.timestamp > 10 * 1000) {
-                    devices.delete(ip);
-                }
-            });
+    console.log('HI:', receiverScriptPath);
+
+    // Kill any existing child processes running file-receiver.js
+    exec(`pkill -f file-receiver.js`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error killing existing processes: ${error.message}`);
+        } else {
+            console.log(`Killed existing processes: ${stdout}`);
         }
-    });
 
-    receiverProcess.unref(); // Ensure it doesn't terminate with Electron
-    console.log("File receiver started in the background");
+        // Fork the receiver script
+        receiverProcess = fork(receiverScriptPath, [downloadPath, resourcesPath], {
+            detached: true, // Allow it to run independently
+            // stdio: ["ignore", fs.openSync(logFile, 'a'), fs.openSync(logFile, 'a'), "ipc"], // IPC and logging
+            stdio: ["inherit", "inherit", "inherit", "ipc"], // IPC only
+            env: { ELECTRON_RUN_AS_NODE: "1" }, // Run as a Node.js script
+        });
+
+        // Listen for messages from the child process
+        receiverProcess.on("message", (message) => {
+            console.log(message.command);
+            if (message.command === 'file-received' && mainWindow && mainWindow.webContents) {
+                console.log("File received in the background:", message);
+                mainWindow.webContents.send("file-received", message);
+            } else if (message.command === 'set-device') {
+                console.log("Device discovered in the background:", message);
+                devices.set(message.ip, message);
+                const now = Date.now();
+                devices.forEach((device, ip) => {
+                    if (now - device.timestamp > 30 * 1000) {
+                        devices.delete(ip);
+                    }
+                });
+            }
+        });
+
+        // Ensure the process continues after the parent exits
+        receiverProcess.unref();
+
+        console.log("File receiver started in the background");
+    });
 }
 
 
 let mainWindow;
 
 const httpServer = require('http-server');
+const { resourcesPath, env } = require("process");
+const { not } = require("ajv/dist/compile/codegen");
 
 function startHttpServer() {
     const server = httpServer.createServer({ root: path.join(__dirname, 'build') });

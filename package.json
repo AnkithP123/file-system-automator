@@ -1,6 +1,6 @@
 {
   "name": "flicker-file-management",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "dependencies": {
     "@electron/remote": "^2.1.2",
@@ -12,8 +12,11 @@
     "archiver-utils": "^5.0.2",
     "call-bind-apply-helpers": "^1.0.1",
     "child_process": "^1.0.2",
+    "clipboardy": "^4.0.0",
+    "fix-path": "^4.0.0",
     "glob": "^11.0.1",
     "http-server": "^14.1.1",
+    "node-notifier": "^10.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
@@ -62,15 +65,34 @@
       "electron.js",
       "preload.js",
       "package.json",
-      "file-receiver.js",
       "node_modules/**/*",
-      "node_modules"
+      "node_modules",
+      "node_modules/*",
+      "node_modules/node-notifier/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "file-receiver.js",
+        "to": "resources/file-receiver.js"
+      },
+      {
+        "from": "icons/logo.png",
+        "to": "resources/logo.png"
+      },
+      {
+        "from": "FlickerNotifier.app",
+        "to": "resources/FlickerNotifier.app"
+      }
     ],
     "extraMetadata": {
       "main": "electron.js"
     },
     "mac": {
-      "target": "dmg",
+      "target": [
+        {
+          "target": "dmg"
+        }
+      ],
       "category": "public.app-category.utilities",
       "icon": "icons/logo.png"
     },
@@ -87,7 +109,7 @@
     }
   },
   "devDependencies": {
-    "ajv": "^7.2.4",
+    "ajv": "^8.8.2",
     "electron": "^34.0.0",
     "electron-builder": "^25.1.8",
     "electron-is-dev": "^3.0.1"
