@@ -248,7 +248,6 @@ function FileFlicker() {
             {/* File List */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
                 {files.map((file) => (
-                    <div>
                     <div
                         key={file.id}
                         style={{
@@ -263,7 +262,7 @@ function FileFlicker() {
                             overflowWrap: "break-word",
                         }}
                     >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}></div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
                             {file.type === "folder" ? <FaFolder /> : <FaFileAlt />}
                             <span style={{ wordWrap: "break-word", overflowWrap: "anywhere" }}>{file.name}</span>
                         </div>
@@ -327,8 +326,7 @@ function FileFlicker() {
                     </div>
                 ) : (
                     discoveredDevices.length > 0 && (
-                        <div>
-                        <div style={{ marginBottom: "16px" }}></div>
+                        <div style={{ marginBottom: "16px" }}>
                             <hr style={{ borderColor: "#555" }} />
                             <p style={{ fontSize: "12px", color: "#aaa" }}>Discovered devices:</p>
                             {discoveredDevices.map((device) => (
