@@ -10,6 +10,7 @@ function FileFlicker() {
     const [receivedFiles, setReceivedFiles] = useState([]);
     const [isFlicking, setIsFlicking] = useState(false);
     const [isReceiving, setIsReceiving] = useState(false);
+    const [isFlickerDisabled, setIsFlickerDisabled] = useState(false);
 
     useEffect(() => {
         // Fetch the local IP address
@@ -17,7 +18,13 @@ function FileFlicker() {
 
         // Discover devices on the network
         window.electron.discoverDevices().then((devices) => {
-            setDiscoveredDevices(devices);
+            console.log('Devices:', devices);
+            if (devices === false) {
+                setIsFlickerDisabled(true);
+            } else {
+                setIsFlickerDisabled(false);
+                setDiscoveredDevices(devices);
+            }
         });
 
         // Listen for received files
@@ -59,12 +66,22 @@ function FileFlicker() {
     }, []);
 
     useEffect(() => {
+        
         const fetchDevices = async () => {
-            const devices = await window.electron.discoverDevices();
-            setDiscoveredDevices(devices);
+            window.electron.discoverDevices().then((devices) => {
+                console.log('Devices:', devices);
+                if (devices === false) {
+                    setIsFlickerDisabled(true);
+                } else {
+                    setIsFlickerDisabled(false);
+                    setDiscoveredDevices(devices);
+                }
+
+                console.log('Disabled:', isFlickerDisabled);
+            });
         };
 
-        const interval = setInterval(fetchDevices, 5000); // Refresh every 5 seconds
+        const interval = setInterval(fetchDevices, 3000); // Refresh every 3 seconds
 
         return () => clearInterval(interval); // Cleanup on unmount
     }, []);
@@ -231,6 +248,7 @@ function FileFlicker() {
             {/* File List */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
                 {files.map((file) => (
+                    <div>
                     <div
                         key={file.id}
                         style={{
@@ -245,7 +263,7 @@ function FileFlicker() {
                             overflowWrap: "break-word",
                         }}
                     >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flex: 1 }}></div>
                             {file.type === "folder" ? <FaFolder /> : <FaFileAlt />}
                             <span style={{ wordWrap: "break-word", overflowWrap: "anywhere" }}>{file.name}</span>
                         </div>
@@ -303,32 +321,39 @@ function FileFlicker() {
                     />
                 </div>
 
-                {discoveredDevices.length > 0 && (
-                    <div style={{ marginBottom: "16px" }}>
-                        <hr style={{ borderColor: "#555" }} />
-                        <p style={{ fontSize: "12px", color: "#aaa" }}>Discovered devices:</p>
-                        {discoveredDevices.map((device) => (
-                            <button
-                                key={device.ip}
-                                onClick={() => setTargetIp(device.ip)}
-                                style={{
-                                    display: "block",
-                                    width: "100%",
-                                    textAlign: "left",
-                                    padding: "8px",
-                                    marginBottom: "8px",
-                                    background: "#555",
-                                    color: "#fff",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                <FaWifi style={{ marginRight: "8px" }} />
-                                {device.name} ({device.ip})
-                            </button>
-                        ))}
+                {isFlickerDisabled ? (
+                    <div style={{ color: "#ff0000", marginBottom: "16px" }}>
+                        Flicker signaling is disabled. You cannot see or be seen by devices, or be flicked files, however you can still flick them. Press {window.electron.getPlatform() === 'darwin' ? 'Command' : 'Control'} + U to re-enable it.
                     </div>
+                ) : (
+                    discoveredDevices.length > 0 && (
+                        <div>
+                        <div style={{ marginBottom: "16px" }}></div>
+                            <hr style={{ borderColor: "#555" }} />
+                            <p style={{ fontSize: "12px", color: "#aaa" }}>Discovered devices:</p>
+                            {discoveredDevices.map((device) => (
+                                <button
+                                    key={device.ip}
+                                    onClick={() => setTargetIp(device.ip)}
+                                    style={{
+                                        display: "block",
+                                        width: "100%",
+                                        textAlign: "left",
+                                        padding: "8px",
+                                        marginBottom: "8px",
+                                        background: "#555",
+                                        color: "#fff",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    <FaWifi style={{ marginRight: "8px" }} />
+                                    {device.name} ({device.ip})
+                                </button>
+                            ))}
+                        </div>
+                    )
                 )}
 
                 {/* Flick Files Button */}

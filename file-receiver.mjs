@@ -4,8 +4,11 @@ import path from "path";
 import os from "os";
 import dgram from "dgram";
 import cp from "child_process";
-import notifier from "node-notifier";
-import { GlobalKeyboardListener } from "node-global-key-listener";
+// import notifier from "node-notifier";
+console.log(process.env.USER);
+if (!process.env.USER)
+    process.env.USER = os.userInfo().username;
+// import { GlobalKeyboardListener } from "node-global-key-listener";
 
 console.log("Hey");
 
@@ -54,14 +57,14 @@ function toggleActiveState() {
 
     fileStream.end();
 
-    if (notificationsEnabled) {
+    //if (notificationsEnabled) {
         switch (process.platform) {
             case "win32":
-                new notifier.WindowsToaster().notify({
-                    title: "File Flicker Status",
-                    message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
-                    icon: path.join(resourcesPath, "logo.png"),
-                });
+                // new notifier.WindowsToaster().notify({
+                //     title: "File Flicker Status",
+                //     message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
+                //     icon: path.join(resourcesPath, "logo.png"),
+                // });
                 break;
             case "darwin":
                 console.log("Sending notification...");
@@ -78,13 +81,13 @@ function toggleActiveState() {
                 }
                 break;
             case "linux":
-                new notifier.NotifySend().notify({
-                    title: "File Flicker Status",
-                    message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
-                    icon: path.join(resourcesPath, "logo.png"),
-                });
+                // new notifier.NotifySend().notify({
+                //     title: "File Flicker Status",
+                //     message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
+                //     icon: path.join(resourcesPath, "logo.png"),
+                // });
                 break;
-        }
+        //}
     }
 
     // Delete the status file
@@ -135,11 +138,11 @@ const server = http.createServer((req, res) => {
             if (notificationsEnabled) {
                 switch (process.platform) {
                     case "win32":
-                        new notifier.WindowsToaster().notify({
-                            title: "File Flicked",
-                            message: `You were flicked a file: ${fileName}`,
-                            icon: path.join(resourcesPath, "logo.png"),
-                        });
+                        // new notifier.WindowsToaster().notify({
+                        //     title: "File Flicked",
+                        //     message: `You were flicked a file: ${fileName}`,
+                        //     icon: path.join(resourcesPath, "logo.png"),
+                        // });
                         break;
                     case "darwin":
                         console.log("Sending notification...");
@@ -156,11 +159,11 @@ const server = http.createServer((req, res) => {
                         }
                         break;
                     case "linux":
-                        new notifier.NotifySend().notify({
-                            title: "File Flicked",
-                            message: `You were flicked a file: ${fileName}`,
-                            icon: path.join(resourcesPath, "logo.png"),
-                        });
+                        // new notifier.NotifySend().notify({
+                        //     title: "File Flicked",
+                        //     message: `You were flicked a file: ${fileName}`,
+                        //     icon: path.join(resourcesPath, "logo.png"),
+                        // });
                         break;
                 }
             }
@@ -234,14 +237,26 @@ function startBroadcasting() {
 }
 
 // Keyboard Listener
-const keyboardListener = new GlobalKeyboardListener();
+// const keyboardListener = new GlobalKeyboardListener();
 
-console.log("Press Cmd/Ctr+U to toggle file sending/receiving");
+// console.log("Press Cmd/Ctr+U to toggle file sending/receiving");
 
-keyboardListener.addListener((e, down) => {
-    if (process.platform === 'darwin' ? down["LEFT META"] || down["RIGHT META"] : down["LEFT CTRL"] || down["RIGHT CTRL"]) {
-        if (down["U"]) {
-            toggleActiveState();
-        }
-    }
-});
+
+// keyboardListener.addListener((e, down) => {
+//     console.log(down);
+//     if (process.platform === 'darwin' ? down["LEFT META"] || down["RIGHT META"] : down["LEFT CTRL"] || down["RIGHT CTRL"]) {
+//         if (down["U"]) {
+//             toggleActiveState();
+//         }
+//     }
+// });
+
+
+// await keyboardListener.start();
+
+// keyboardListener.addListener(e => {
+//     console.log('Key pressed:', e);
+// });
+
+// console.log('Keyboard listener:', keyboardListener);
+

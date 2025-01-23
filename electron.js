@@ -10,10 +10,18 @@ const dgram = require("dgram");
 const glob = require("glob");
 const { fork } = require("child_process");
 
+console.log('CWD: ', process.cwd());
+
+
 
 let receiverProcess;
 
+let isActive = false;
+
 function startFileReceiverInBackground() {
+    if (!isActive) {
+        return;
+    }
     const logPath = path.join(app.getPath("userData"), 'logs');
     if (!fs.existsSync(logPath)) {
         fs.mkdirSync(logPath, { recursive: true });
@@ -21,7 +29,7 @@ function startFileReceiverInBackground() {
     const logFile = path.join(logPath, 'receiver.log');
     const downloadPath = app.getPath("downloads");
     console.log('Resources:', resourcesPath);
-    const receiverScriptPath = path.join(".", "file-receiver.mjs");
+    const receiverScriptPath = path.join(resourcesPath, "file-receiver.mjs");
 
     console.log('HI:', receiverScriptPath);
 
@@ -34,9 +42,9 @@ function startFileReceiverInBackground() {
         }
 
         // Fork the receiver script
-        receiverProcess = fork(receiverScriptPath, [downloadPath, ".", getNotificationsEnabled() + ""], {
+        receiverProcess = fork(receiverScriptPath, [downloadPath, resourcesPath, getNotificationsEnabled() + ""], {
             detached: true, // Allow it to run independently
-            stdio: ["ignore", fs.openSync(logFile, 'a'), fs.openSync(logFile, 'a'), "ipc"], // IPC and logging
+            stdio: ["pipe", fs.openSync(logFile, 'a'), fs.openSync(logFile, 'a'), "ipc"], // IPC and logging
             // stdio: ["inherit", "inherit", "inherit", "ipc"], // IPC only
             env: { ELECTRON_RUN_AS_NODE: "1" }, // Run as a Node.js script
         });
@@ -66,6 +74,73 @@ function startFileReceiverInBackground() {
     });
 }
 
+function toggleActiveState() {
+    isActive = !isActive;
+
+    if (!isActive) {
+        receiverProcess.kill();
+    } else {
+        startFileReceiverInBackground();
+    }
+
+    console.log(`File sending/receiving is now ${isActive ? "enabled" : "disabled"}`);
+
+    const statusFilePath = path.join(app.getPath("downloads"), "FileFlicker", isActive ? "receiving.txt" : "disabled.txt");
+
+    const fileStream = fs.createWriteStream(statusFilePath);
+
+    fileStream.on("error", (err) => {
+        console.error("Error writing status file:", err);
+    });
+
+    fileStream.end();
+
+    //if (notificationsEnabled) {
+        switch (process.platform) {
+            case "win32":
+                // new notifier.WindowsToaster().notify({
+                //     title: "File Flicker Status",
+                //     message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
+                //     icon: path.join(resourcesPath, "logo.png"),
+                // });
+                break;
+            case "darwin":
+                console.log("Sending notification...");
+                try {
+                    exec(`xattr -c ${path.join(resourcesPath, "FlickerNotifier.app")} && open ${path.join(resourcesPath, "FlickerNotifier.app")}`, (error, stdout, stderr) => {
+                        if (error) {
+                            console.error("Notification error:", error);
+                        } else {
+                            console.log("Notification sent:", stdout);
+                        }
+                    });
+                } catch (error) {
+                    console.error("Clipboard error:", error);
+                }
+                break;
+            case "linux":
+                // new notifier.NotifySend().notify({
+                //     title: "File Flicker Status",
+                //     message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
+                //     icon: path.join(resourcesPath, "logo.png"),
+                // });
+                break;
+        //}
+    }
+
+    // Delete the status file
+    setTimeout(() => {
+        try {
+            fs.unlinkSync(statusFilePath);
+        } catch (err) {
+            console.error("Error deleting status file:", err);
+        }
+    }, 5000);
+    
+
+}
+
+
 
 let mainWindow;
 
@@ -89,6 +164,8 @@ app.on("ready", () => {
         args: ["--login"],
     });
 
+    isActive = true;
+
     startFileReceiverInBackground();
 
     if (isLogin) {
@@ -107,6 +184,10 @@ app.on("ready", () => {
         const updatedSettings = { ...defaultSettings, ...settings };
         fs.writeFileSync(settingsPath, JSON.stringify(updatedSettings, null, 2));
     }
+
+    globalShortcut.register("CommandOrControl+U", () => {
+        toggleActiveState();
+    });
         
     
     mainWindow = new BrowserWindow({
@@ -312,7 +393,7 @@ function getLocalIp() {
 
 // Simulate device discovery on the network
 ipcMain.handle("network:discover", async () => {
-    return Array.from(devices.values());
+    return isActive ? Array.from(devices.values()) : false;
 });
 
 
