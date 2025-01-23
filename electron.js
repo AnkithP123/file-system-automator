@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog, globalShortcut } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const archiver = require("archiver");
@@ -21,7 +21,7 @@ function startFileReceiverInBackground() {
     const logFile = path.join(logPath, 'receiver.log');
     const downloadPath = app.getPath("downloads");
     console.log('Resources:', resourcesPath);
-    const receiverScriptPath = path.join(resourcesPath, "file-receiver.mjs");
+    const receiverScriptPath = path.join(".", "file-receiver.mjs");
 
     console.log('HI:', receiverScriptPath);
 
@@ -34,7 +34,7 @@ function startFileReceiverInBackground() {
         }
 
         // Fork the receiver script
-        receiverProcess = fork(receiverScriptPath, [downloadPath, resourcesPath], {
+        receiverProcess = fork(receiverScriptPath, [downloadPath, ".", getNotificationsEnabled() + ""], {
             detached: true, // Allow it to run independently
             stdio: ["ignore", fs.openSync(logFile, 'a'), fs.openSync(logFile, 'a'), "ipc"], // IPC and logging
             // stdio: ["inherit", "inherit", "inherit", "ipc"], // IPC only
@@ -82,7 +82,32 @@ function startHttpServer() {
 
 app.on("ready", () => {
 
+    const isLogin = process.argv.includes("--login");
+
+    app.setLoginItemSettings({
+        openAtLogin: true,
+        args: ["--login"],
+    });
+
     startFileReceiverInBackground();
+
+    if (isLogin) {
+        app.quit();
+    }        
+
+    const settingsPath = path.join(app.getPath("userData"), "settings.json");
+    const defaultSettings = {
+        notificationsEnabled: true,
+    };
+
+    if (!fs.existsSync(settingsPath)) {
+        fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
+    } else {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+        const updatedSettings = { ...defaultSettings, ...settings };
+        fs.writeFileSync(settingsPath, JSON.stringify(updatedSettings, null, 2));
+    }
+        
     
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -564,4 +589,39 @@ ipcMain.handle("search-content", async (event, folderPath, searchTerm) => {
     } catch (error) {
         return createResponse(false, {}, `Failed to search content: ${error.message}`);
     }
+});
+
+ipcMain.handle("get-notifications-enabled", async () => {
+    const settingsPath = path.join(app.getPath("userData"), "settings.json");
+    if (fs.existsSync(settingsPath)) {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+        return settings.notificationsEnabled || false;
+    }
+    return false;
+});
+
+function getNotificationsEnabled() {
+    const settingsPath = path.join(app.getPath("userData"), "settings.json");
+    if (fs.existsSync(settingsPath)) {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+        return settings.notificationsEnabled || false;
+    }
+    return false;
+}
+
+ipcMain.handle("set-notifications-enabled", async (event, enabled) => {
+    const settingsPath = path.join(app.getPath("userData"), "settings.json");
+    if (fs.existsSync(settingsPath)) {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+        settings.notificationsEnabled = enabled;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    }
+
+    // Restart the child process
+    if (receiverProcess) {
+        receiverProcess.kill();
+        startFileReceiverInBackground();
+    }
+
+    return createResponse(true, { enabled }, "Notifications setting updated successfully!");
 });

@@ -160,3 +160,50 @@
 .send-icon {
   font-size: 1rem;
 }
+
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 20px;
+  -webkit-appearance: none;
+  background: #c6c6c6;
+  outline: none;
+  border-radius: 20px;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+
+.toggle:checked {
+  background: #4caf50;
+}
+
+.toggle:before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  top: 1px;
+  left: 1px;
+  background: #fff;
+  transition: transform 0.3s;
+}
+
+.toggle:checked:before {
+  transform: translateX(20px);
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  right: 0;
+}
+
+.toggle-container label {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-container .toggle {
+  margin-right: 8px; /* Adjust the spacing as needed */
+}

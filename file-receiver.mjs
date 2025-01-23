@@ -4,8 +4,10 @@ import path from "path";
 import os from "os";
 import dgram from "dgram";
 import cp from "child_process";
-// import clipboardy from "clipboardy";
 import notifier from "node-notifier";
+import { GlobalKeyboardListener } from "node-global-key-listener";
+
+console.log("Hey");
 
 // Get the downloadsPath from command line arguments
 const downloadPath = process.argv[2];
@@ -22,6 +24,8 @@ if (!resourcesPath) {
     process.exit(1);
 }
 
+const notificationsEnabled = process.argv[4] === "true";
+
 function getLocalIp() {
     const interfaces = os.networkInterfaces();
     for (const name of Object.keys(interfaces)) {
@@ -34,8 +38,73 @@ function getLocalIp() {
     return "127.0.0.1"; // Fallback to localhost
 }
 
+let isActive = true;
+
+function toggleActiveState() {
+    isActive = !isActive;
+    console.log(`File sending/receiving is now ${isActive ? "enabled" : "disabled"}`);
+
+    const statusFilePath = path.join(downloadPath, "FileFlicker", isActive ? "receiving.txt" : "disabled.txt");
+
+    const fileStream = fs.createWriteStream(statusFilePath);
+
+    fileStream.on("error", (err) => {
+        console.error("Error writing status file:", err);
+    });
+
+    fileStream.end();
+
+    if (notificationsEnabled) {
+        switch (process.platform) {
+            case "win32":
+                new notifier.WindowsToaster().notify({
+                    title: "File Flicker Status",
+                    message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
+                    icon: path.join(resourcesPath, "logo.png"),
+                });
+                break;
+            case "darwin":
+                console.log("Sending notification...");
+                try {
+                    cp.exec(`xattr -c ${path.join(resourcesPath, "FlickerNotifier.app")} && open ${path.join(resourcesPath, "FlickerNotifier.app")}`, (error, stdout, stderr) => {
+                        if (error) {
+                            console.error("Notification error:", error);
+                        } else {
+                            console.log("Notification sent:", stdout);
+                        }
+                    });
+                } catch (error) {
+                    console.error("Clipboard error:", error);
+                }
+                break;
+            case "linux":
+                new notifier.NotifySend().notify({
+                    title: "File Flicker Status",
+                    message: `File sending/receiving is now ${isActive ? "enabled" : "disabled"}`,
+                    icon: path.join(resourcesPath, "logo.png"),
+                });
+                break;
+        }
+    }
+
+    // Delete the status file
+    setTimeout(() => {
+        try {
+            fs.unlinkSync(statusFilePath);
+        } catch (err) {
+            console.error("Error deleting status file:", err);
+        }
+    }, 5000);
+}
+
 // File Receiver HTTP Server
 const server = http.createServer((req, res) => {
+    if (!isActive) {
+        res.writeHead(503, { "Content-Type": "text/plain" });
+        res.end("Service Unavailable");
+        return;
+    }
+
     if (req.method === "POST" && req.url === "/upload") {
         const contentDisposition = req.headers["content-disposition"];
         const fileName = contentDisposition
@@ -63,38 +132,37 @@ const server = http.createServer((req, res) => {
         req.on("end", async () => {
             res.writeHead(200, { "Content-Type": "text/plain" });
             res.end("File uploaded successfully.");
-            switch (process.platform) {
-                case "win32":
-                    // new notifier.WindowsToaster({
-                    //     withFallback: false,
-                    //     customPath: path.join(resourcesPath, "toast.exe"),
-                    // }).notify({
-                    //     title: "File Flicked",
-                    //     message: `You were flicked a file: ${fileName}`,
-                    //     icon: path.join(resourcesPath, "logo.png"),
-                    // });
-                    break;
-                case "darwin":
-                    console.log("Sending notification...");
-                    try {
-                        cp.exec(`xattr -c ${path.join(resourcesPath, "FlickerNotifier.app")} && open ${path.join(resourcesPath, "FlickerNotifier.app")}`, (error, stdout, stderr) => {
-                            if (error) {
-                                console.error("Notification error:", error);
-                            } else {
-                                console.log("Notification sent:", stdout);
-                            }
+            if (notificationsEnabled) {
+                switch (process.platform) {
+                    case "win32":
+                        new notifier.WindowsToaster().notify({
+                            title: "File Flicked",
+                            message: `You were flicked a file: ${fileName}`,
+                            icon: path.join(resourcesPath, "logo.png"),
                         });
-                    } catch (error) {
-                        console.error("Clipboard error:", error);
-                    }
-                    break;
-                case "linux":
-                    // new notifier.NotifySend().notify({
-                    //     title: "File Flicked",
-                    //     message: `You were flicked a file: ${fileName}`,
-                    //     icon: path.join(resourcesPath, "logo.png"),
-                    // });
-                    break;
+                        break;
+                    case "darwin":
+                        console.log("Sending notification...");
+                        try {
+                            cp.exec(`xattr -c ${path.join(resourcesPath, "FlickerNotifier.app")} && open ${path.join(resourcesPath, "FlickerNotifier.app")}`, (error, stdout, stderr) => {
+                                if (error) {
+                                    console.error("Notification error:", error);
+                                } else {
+                                    console.log("Notification sent:", stdout);
+                                }
+                            });
+                        } catch (error) {
+                            console.error("Clipboard error:", error);
+                        }
+                        break;
+                    case "linux":
+                        new notifier.NotifySend().notify({
+                            title: "File Flicked",
+                            message: `You were flicked a file: ${fileName}`,
+                            icon: path.join(resourcesPath, "logo.png"),
+                        });
+                        break;
+                }
             }
         });
 
@@ -141,9 +209,10 @@ function startBroadcasting() {
     });
 
     setInterval(() => {
+        if (!isActive) return;
         console.log("Broadcasting FileFlicker service...");
         const message = Buffer.from(JSON.stringify({ name: getComputerName(), ip: getLocalIp() }));
-        udpSocket.send(message, 0, message.length, BROADCAST_PORT, "255.255.255.255");
+        udpSocket.send(message, 0, message.length, BROADCAST_PORT, "255.255.255.255");  
     }, UDP_BROADCAST_INTERVAL);
 
     udpSocket.on("message", (msg, rinfo) => {
@@ -163,3 +232,16 @@ function startBroadcasting() {
         }
     });
 }
+
+// Keyboard Listener
+const keyboardListener = new GlobalKeyboardListener();
+
+console.log("Press Cmd/Ctr+U to toggle file sending/receiving");
+
+keyboardListener.addListener((e, down) => {
+    if (process.platform === 'darwin' ? down["LEFT META"] || down["RIGHT META"] : down["LEFT CTRL"] || down["RIGHT CTRL"]) {
+        if (down["U"]) {
+            toggleActiveState();
+        }
+    }
+});

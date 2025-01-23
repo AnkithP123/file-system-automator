@@ -32,5 +32,7 @@ contextBridge.exposeInMainWorld("electron", {
       },
     onAdd: (callback) => ipcRenderer.on("file-added", (event, data) => callback(data)),
     onFlick: (callback) => ipcRenderer.on("flick", async (event, data) => await callback(data)),
+    getNotificationsEnabled: () => ipcRenderer.invoke("get-notifications-enabled"),
+    setNotificationsEnabled: (enabled) => ipcRenderer.invoke("set-notifications-enabled", enabled),
 
 });
